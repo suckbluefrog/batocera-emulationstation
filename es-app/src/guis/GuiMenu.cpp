@@ -20,6 +20,7 @@
 #include "guis/GuiRetroAchievementsSettings.h"
 #include "guis/GuiSystemInformation.h"
 #include "guis/GuiControllersSettings.h"
+#include "guis/GuiMoonlight.h"
 #include "views/UIModeController.h"
 #include "views/ViewController.h"
 #include "CollectionSystemManager.h"
@@ -514,21 +515,64 @@ void GuiMenu::openMultiScreensSettings()
 			// theme
 			auto themes = ApiSystem::getInstance()->backglassThemes();
 			auto selectedTheme = SystemConf::getInstance()->get("backglass.theme");
-			auto theme = std::make_shared<OptionListComponent<std::string> >(mWindow, _("THEME"), false);
+			if (selectedTheme.empty())
+				selectedTheme = "auto";
+			auto theme = std::make_shared<OptionListComponent<std::string> >(mWindow, _("BOTTOM SCREEN WIDGET"), false);
 			
 			std::vector<std::string> themeList;
 			for (auto it = themes.begin(); it != themes.end(); it++)
 			  themeList.push_back(*it);
 			std::sort(themeList.begin(), themeList.end(), [](const std::string& a, const std::string& b) -> bool { return Utils::String::toLower(a).compare(Utils::String::toLower(b)) < 0; });
 
-			theme->add(_("AUTO"), "auto", selectedTheme == "" || selectedTheme == "auto");
+			std::vector<std::pair<std::string, std::string>> preferredThemes = {
+				{ _("DISABLED"), "none" },
+				{ _("AUTO"), "auto" },
+				{ _("KODI"), "kodi" },
+				{ _("WAYDROID"), "waydroid" },
+				{ _("SYSTEM DASHBOARD"), "backglass-conky" },
+				{ _("DEFAULT BACKGLASS"), "backglass-default" },
+				{ _("IMAGE"), "backglass-image" },
+				{ _("BOXART"), "backglass-boxart" },
+				{ _("FANART"), "backglass-fanart" },
+				{ _("MARQUEE"), "backglass-marquee" }
+			};
+
+			themeList.erase(std::remove_if(themeList.begin(), themeList.end(), [](const std::string& themeName) {
+				auto lowerThemeName = Utils::String::toLower(themeName);
+				return lowerThemeName.find("vmu") != std::string::npos;
+			}), themeList.end());
+
+			for (auto preferredTheme : preferredThemes)
+			{
+				bool isVirtualTheme = preferredTheme.second == "none" || preferredTheme.second == "auto" ||
+					preferredTheme.second == "kodi" || preferredTheme.second == "waydroid";
+				bool isAvailableTheme = std::find(themeList.begin(), themeList.end(), preferredTheme.second) != themeList.end();
+				if (isVirtualTheme || isAvailableTheme)
+					theme->add(preferredTheme.first, preferredTheme.second, preferredTheme.second == selectedTheme);
+			}
+
 			for (auto themeName : themeList)
-			  theme->add(themeName, themeName, themeName == selectedTheme);
+			{
+				bool alreadyAdded = false;
+				for (auto preferredTheme : preferredThemes)
+				{
+					if (preferredTheme.second == themeName)
+					{
+						alreadyAdded = true;
+						break;
+					}
+				}
+
+				if (!alreadyAdded)
+					theme->add(themeName, themeName, themeName == selectedTheme);
+			}
 			
-			s->addWithLabel(_("THEME"), theme);
+			s->addWithDescription(_("BOTTOM SCREEN WIDGET"), _("Selects what appears on the secondary screen while browsing EmulationStation."), theme);
 			s->addSaveFunc([theme]
 			{
 			  std::string oldTheme = SystemConf::getInstance()->get("backglass.theme");
+			  if (oldTheme.empty())
+			    oldTheme = "auto";
 			  if (oldTheme != theme->getSelected()) {
 			    SystemConf::getInstance()->set("backglass.theme", theme->getSelected());
 			    SystemConf::getInstance()->saveSystemConf();
@@ -1936,6 +1980,13 @@ void GuiMenu::openSystemSettings()
 		bool isEnabled = ApiSystem::getInstance()->isLEDEnabled();
 		led_enabled_switch->setState(isEnabled);
 		s->addWithLabel(_("ENABLE LED"), led_enabled_switch);
+
+		// Apply immediately: on some devices the save hook isn't triggered when users expect,
+		// making the toggle look broken. ApiSystem::setLEDEnabled also persists the setting.
+		led_enabled_switch->setOnChangedCallback([led_enabled_switch]
+		{
+			ApiSystem::getInstance()->setLEDEnabled(led_enabled_switch->getState());
+		});
 		
 		std::string colourString = SystemConf::getInstance()->get("led.colour");
 		if (colourString.empty())
@@ -2537,6 +2588,34 @@ void GuiMenu::addFeatureItem(Window* window, GuiSettings* settings, const Custom
 			item->add(_(customRunner.c_str()), customRunner, storedValue == customRunner);
 		}
 	}
+	else if (feat.preset == "steamusers")
+	{
+		item->add(_("AUTO"), "auto", storedValue.empty() || storedValue == "auto");
+		item->add(_("ASK EACH TIME"), "prompt", storedValue == "prompt");
+
+		auto users = ApiSystem::getInstance()->getSteamUsers();
+		for (auto steamUser : users)
+		{
+			std::vector<std::string> tokens = Utils::String::split(steamUser, ':');
+			if (tokens.size() == 0)
+				continue;
+
+			std::string value = tokens.at(0);
+			std::string label = value;
+			if (tokens.size() > 1)
+			{
+				label.clear();
+				for (unsigned int i = 1; i < tokens.size(); i++)
+				{
+					if (i > 1)
+						label += ":";
+					label += tokens.at(i);
+				}
+			}
+
+			item->add(label, value, storedValue == value);
+		}
+	}
 	else
 	{
 		item->add(_("AUTO"), "", storedValue.empty() || storedValue == "auto");
@@ -2724,6 +2803,9 @@ void GuiMenu::openGamesSettings()
 	// Game List Update
 	s->addEntry(_("UPDATE GAMELISTS"), false, [this, window] { updateGameLists(window); });
 
+	if (Utils::FileSystem::exists("/usr/bin/batocera-moonlight"))
+		s->addEntry(_("MOONLIGHT GAME STREAMING"), false, [window] { GuiMoonlight::show(window); });
+
 	if (SystemConf::getInstance()->getBool("global.retroachievements") && !Settings::getInstance()->getBool("RetroachievementsMenuitem") && SystemConf::getInstance()->get("global.retroachievements.username") != "")
 	{
 		s->addEntry(_("RETROACHIEVEMENTS").c_str(), true, [this] 
@@ -2772,7 +2854,6 @@ void GuiMenu::openGamesSettings()
 	auto incrementalSaveStates = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INCREMENTAL SAVESTATES"));
 	incrementalSaveStates->addRange({
 		{ _("INCREMENT PER SAVE"), _("Never overwrite old savestates, always make new ones."), "" }, // Don't use 1 -> 1 is YES, auto too
-		{ _("INCREMENT SLOT"), _("Increment slot on a new game."), "0" },
 		{ _("DO NOT INCREMENT"), _("Use current slot on a new game."), "2" } },
 		SystemConf::getInstance()->get("global.incrementalsavestates"));
 
@@ -4266,6 +4347,27 @@ void GuiMenu::openNetworkSettings(bool selectWifiEnable)
 #if !WIN32
 	// Hostname
 	s->addInputTextConfigRow(_("HOSTNAME"), "system.hostname", false);
+
+	const std::string baseNetworkMode = SystemConf::getInstance()->get("network.mode");
+	auto networkMode = std::make_shared<OptionListComponent<std::string>>(mWindow, _("IP CONFIGURATION"), false);
+	networkMode->add(_("AUTOMATIC (DHCP)"), "dhcp", baseNetworkMode != "manual");
+	networkMode->add(_("MANUAL"), "manual", baseNetworkMode == "manual");
+	s->addWithLabel(_("IP CONFIGURATION"), networkMode);
+	s->addSaveFunc([networkMode] { SystemConf::getInstance()->set("network.mode", networkMode->getSelected()); });
+	networkMode->setSelectedChangedCallback([this, s](std::string mode)
+	{
+		SystemConf::getInstance()->set("network.mode", mode);
+		delete s;
+		openNetworkSettings();
+	});
+
+	if (baseNetworkMode == "manual")
+	{
+		s->addInputTextConfigRow(_("STATIC IP ADDRESS"), "network.ip", false);
+		s->addInputTextConfigRow(_("NETMASK"), "network.netmask", false);
+		s->addInputTextConfigRow(_("GATEWAY"), "network.gateway", false);
+		s->addInputTextConfigRow(_("DNS SERVER"), "network.dns", false);
+	}
 #endif
 
 	// Wifi enable

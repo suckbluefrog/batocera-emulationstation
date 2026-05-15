@@ -611,21 +611,15 @@ bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
 		return true;
 
 	case SDL_KEYDOWN:
+	  if ((ev.key.keysym.mod & KMOD_SHIFT) != 0 && (ev.key.keysym.mod & KMOD_ALT) != 0 && ev.key.keysym.sym == SDLK_F4) {
+	    Utils::Platform::ExitRequest::user = 1;
+	  }
+
 		if (ev.key.keysym.sym == SDLK_BACKSPACE && SDL_IsTextInputActive())
 			window->textInput("\b");
 
 		if (ev.key.repeat)
 			return false;
-
-#if !WIN32
-		if (ev.key.keysym.sym == SDLK_F4)
-		{
-			SDL_Event* quit = new SDL_Event();
-			quit->type = SDL_QUIT;
-			SDL_PushEvent(quit);
-			return false;
-		}
-#endif
 
 		window->input(getInputConfigByDevice(DEVICE_KEYBOARD), Input(DEVICE_KEYBOARD, TYPE_KEY, ev.key.keysym.sym, 1, false));
 		return true;
@@ -1274,6 +1268,7 @@ std::string InputManager::configureEmulators() {
       command << " -p" << player+1 << "nbbuttons "  << playerInputConfig->getDeviceNbButtons();
       command << " -p" << player+1 << "nbhats "     << playerInputConfig->getDeviceNbHats();
       command << " -p" << player+1 << "nbaxes "     << playerInputConfig->getDeviceNbAxes();
+      command << " -p" << player+1 << "devicepath " <<  SDL_JoystickDevicePathById(playerInputConfig->getDeviceId());
       command << " ";
     }
   }
@@ -1294,7 +1289,7 @@ void InputManager::updateBatteryLevel(int id, const std::string& device, const s
 		{
 			if (!devicePath.empty())
 			{
-				if (Utils::String::compareIgnoreCase(config->getDevicePath(), devicePath) == 0)
+				if (device == SDL_JoystickDevicePathById(config->getDeviceId()))
 				{
 					config->updateBatteryLevel(level);
 					changed = true;
@@ -1302,7 +1297,7 @@ void InputManager::updateBatteryLevel(int id, const std::string& device, const s
 			}
 			else
 			{
-				if (Utils::String::compareIgnoreCase(config->getDeviceGUIDString(), device) == 0)
+				if (device == SDL_JoystickDevicePathById(config->getDeviceId()))
 				{
 					config->updateBatteryLevel(level);
 					changed = true;

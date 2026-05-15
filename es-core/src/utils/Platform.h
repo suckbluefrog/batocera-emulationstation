@@ -17,6 +17,11 @@ namespace Utils
 {
 	namespace Platform
 	{
+	  class ExitRequest {
+	  public:
+	    static int user;
+	  };
+
 		enum QuitMode
 		{
 			QUIT = 0,

@@ -260,6 +260,7 @@ public:
     std::vector<BiosSystem> getBiosInformations(const std::string system = "");
     virtual std::vector<std::string> getVideoModes(const std::string output = "");
 	std::vector<std::string> getCustomRunners();
+	std::vector<std::string> getSteamUsers();
 
 	virtual std::vector<std::string> getAvailableStorageDevices();
 	virtual std::vector<std::string> getSystemInformations();

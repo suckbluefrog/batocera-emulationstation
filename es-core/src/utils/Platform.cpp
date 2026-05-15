@@ -33,6 +33,8 @@ namespace Utils
 {
 	namespace Platform
 	{
+	  int ExitRequest::user = 0;
+
 		ProcessStartInfo::ProcessStartInfo()
 		{
 			window = nullptr;
@@ -230,6 +232,8 @@ namespace Utils
 				Scripting::fireEvent("shutdown");
 				break;
 			}
+
+			ExitRequest::user = 1;
 
 			SDL_Event* quit = new SDL_Event();
 			quit->type = SDL_QUIT;
