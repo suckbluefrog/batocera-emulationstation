@@ -361,6 +361,10 @@ void GuiScraperStart::loadAccountsPage()
 	addInputTextConfigRow(_("CLIENT ID"), "IGDBClientID", false, true);
 	addInputTextConfigRow(_("CLIENT SECRET"), "IGDBSecret", true, true);
 
+	addGroup(_("THEGAMESDB"));
+	addInputTextConfigRow(_("API KEY"), "thegamesdb.api_key", true);
+	addWithDescription(_("API KEY FILE"), _("Optional fallback: put the TheGamesDB API key in /userdata/system/configs/emulationstation/thegamesdb.key."), nullptr);
+
 	addGroup(_("STEAMGRIDDB"));
 	addInputTextConfigRow(_("API KEY"), "steamgriddb.api_key", true);
 	addWithDescription(_("API KEY FILE"), _("Optional fallback: put the SteamGridDB API key in /userdata/system/configs/emulationstation/steamgriddb.key."), nullptr);

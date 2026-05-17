@@ -2,14 +2,16 @@
 #include <fstream>
 #include <memory>
 #include <thread>
+#include <vector>
 #include "scrapers/GamesDBJSONScraperResources.h"
+#include "SystemConf.h"
 #include "utils/FileSystemUtil.h"
+#include "utils/StringUtil.h"
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include "Log.h"
 #include "Paths.h"
 
-#ifdef GAMESDB_APIKEY
 using namespace rapidjson;
 
 namespace
@@ -19,6 +21,7 @@ constexpr int POLL_TIME_MS = 500;
 constexpr int MAX_WAIT_ITER = MAX_WAIT_MS / POLL_TIME_MS;
 
 constexpr char SCRAPER_RESOURCES_DIR[] = "scrapers";
+constexpr char THEGAMESDB_API_KEY_FILE_NAME[] = "thegamesdb.key";
 constexpr char DEVELOPERS_JSON_FILE[] = "gamesdb_developers.json";
 constexpr char PUBLISHERS_JSON_FILE[] = "gamesdb_publishers.json";
 constexpr char GENRES_JSON_FILE[] = "gamesdb_genres.json";
@@ -38,6 +41,58 @@ void ensureScrapersResourcesDir()
 		Utils::FileSystem::createDirectory(path);
 }
 
+std::vector<std::string> getTheGamesDBApiKeyFilePaths()
+{
+	std::vector<std::string> paths;
+	paths.push_back(Utils::FileSystem::combine(Paths::getUserEmulationStationPath(), THEGAMESDB_API_KEY_FILE_NAME));
+	paths.push_back("/userdata/system/" + std::string(THEGAMESDB_API_KEY_FILE_NAME));
+	return paths;
+}
+
+std::string unwrapTheGamesDBApiKey(std::string key)
+{
+	key = Utils::String::trim(key);
+	if (key.size() >= 2 && ((key.front() == '"' && key.back() == '"') || (key.front() == '\'' && key.back() == '\'')))
+		key = Utils::String::trim(key.substr(1, key.size() - 2));
+
+	return key;
+}
+
+std::string extractTheGamesDBApiKey(const std::string& contents)
+{
+	for (auto line : Utils::String::splitAny(contents, "\r\n", true))
+	{
+		line = Utils::String::trim(line);
+		if (line.empty() || Utils::String::startsWith(line, "#") || Utils::String::startsWith(line, ";"))
+			continue;
+
+		auto equalPos = line.find('=');
+		if (equalPos != std::string::npos)
+		{
+			auto key = Utils::String::trim(line.substr(0, equalPos));
+			if (key == "thegamesdb.api_key" || key == "gamesdb.api_key" || key == "GAMESDB_APIKEY" || key == "api_key" || key == "key")
+				line = line.substr(equalPos + 1);
+			else
+				continue;
+		}
+
+		line = unwrapTheGamesDBApiKey(line);
+		if (!line.empty())
+			return line;
+	}
+
+	return "";
+}
+
+std::string getCompiledTheGamesDBApiKey()
+{
+#ifdef GAMESDB_APIKEY
+	return GAMESDB_APIKEY;
+#else
+	return "";
+#endif
+}
+
 } // namespace
 
 
@@ -46,7 +101,24 @@ std::string getScrapersResouceDir()
 	return Utils::FileSystem::getGenericPath(Paths::getUserEmulationStationPath() + std::string("/") + SCRAPER_RESOURCES_DIR);
 }
 
-std::string TheGamesDBJSONRequestResources::getApiKey() const { return GAMESDB_APIKEY; }
+std::string TheGamesDBJSONRequestResources::getApiKey() const
+{
+	auto apiKey = unwrapTheGamesDBApiKey(SystemConf::getInstance()->get("thegamesdb.api_key"));
+	if (!apiKey.empty())
+		return apiKey;
+
+	for (auto path : getTheGamesDBApiKeyFilePaths())
+	{
+		if (!Utils::FileSystem::exists(path))
+			continue;
+
+		apiKey = extractTheGamesDBApiKey(Utils::FileSystem::readAllText(path));
+		if (!apiKey.empty())
+			return apiKey;
+	}
+
+	return unwrapTheGamesDBApiKey(getCompiledTheGamesDBApiKey());
+}
 
 
 void TheGamesDBJSONRequestResources::prepare()
@@ -198,4 +270,3 @@ int TheGamesDBJSONRequestResources::loadResource(
 	}
 	return resource.empty();
 }
-#endif

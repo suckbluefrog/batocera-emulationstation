@@ -1,10 +1,9 @@
 #include <exception>
 #include <map>
+#include <stdexcept>
 
 #include "scrapers/GamesDBJSONScraper.h"
 #include "scrapers/GamesDBJSONScraperResources.h"
-
-#ifdef GAMESDB_APIKEY
 
 #include "FileData.h"
 #include "Log.h"
@@ -195,10 +194,19 @@ bool TheGamesDBScraper::isSupportedPlatform(SystemData* system)
 void TheGamesDBScraper::generateRequests(const ScraperSearchParams& params,
 	std::queue<std::unique_ptr<ScraperRequest>>& requests, std::vector<ScraperSearchResult>& results)
 {
+	auto apiKeyValue = resources.getApiKey();
+	if (apiKeyValue.empty())
+	{
+		if (!params.isManualScrape)
+			throw std::runtime_error("INVALID CREDENTIALS");
+
+		return;
+	}
+
 	resources.prepare();
 	std::string path = "https://api.thegamesdb.net/v1";
 	bool usingGameID = false;
-	const std::string apiKey = std::string("apikey=") + resources.getApiKey();
+	const std::string apiKey = std::string("apikey=") + apiKeyValue;
 	std::string cleanName = params.nameOverride;
 
 	if (!cleanName.empty() && cleanName.substr(0, 3) == "id:")
@@ -629,5 +637,3 @@ bool TheGamesDBJSONRequest::process(const std::string& response, std::vector<Scr
 
 	return true;
 }
-
-#endif
