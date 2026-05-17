@@ -254,7 +254,7 @@ public:
 	static int getScraperIndex(const std::string& name);
 	static std::string getScraperNameFromIndex(int index);
 
-	static std::vector<std::string> getScraperList();
+	static std::vector<std::string> getScraperList(bool includeInternal = false);
 	static bool isValidConfiguredScraper();
 
 	//About the same as "~/.emulationstation/downloaded_images/[system_name]/[game_name].[url's extension]".

@@ -26,6 +26,11 @@
 #define OVERQUOTA_RETRY_DELAY 15000
 #define OVERQUOTA_RETRY_COUNT 5
 
+static bool isInternalScraper(const std::string& scraper)
+{
+	return scraper == "LocalLaunchers";
+}
+
 std::vector<std::pair<std::string, Scraper*>> Scraper::scrapers
 {
 	{ "Mixed", new MixedScraper() },
@@ -79,12 +84,25 @@ std::string Scraper::getScraperNameFromIndex(int index)
 
 Scraper* Scraper::getScraper(const std::string name)
 {	
-	auto scraper = name;
-	if(scraper.empty())
-		scraper = Settings::getInstance()->getString("Scraper");
-	
+	if(!name.empty())
+	{
+		for (auto scrap : Scraper::scrapers)
+			if (scrap.first == name)
+				return scrap.second;
+
+		return nullptr;
+	}
+
+	auto scraper = Settings::getInstance()->getString("Scraper");
+	if (!scraper.empty() && !isInternalScraper(scraper))
+	{
+		for (auto scrap : Scraper::scrapers)
+			if (scrap.first == scraper)
+				return scrap.second;
+	}
+
 	for (auto scrap : Scraper::scrapers)
-		if (scrap.first == scraper)
+		if (!isInternalScraper(scrap.first))
 			return scrap.second;
 
 	return nullptr;
@@ -207,11 +225,16 @@ std::unique_ptr<ScraperSearchHandle> Scraper::search(const ScraperSearchParams& 
 	return handle;
 }
 
-std::vector<std::string> Scraper::getScraperList()
+std::vector<std::string> Scraper::getScraperList(bool includeInternal)
 {
 	std::vector<std::string> list;
 	for(auto& it : Scraper::scrapers)
+	{
+		if (!includeInternal && isInternalScraper(it.first))
+			continue;
+
 		list.push_back(it.first);
+	}
 
 	return list;
 }
