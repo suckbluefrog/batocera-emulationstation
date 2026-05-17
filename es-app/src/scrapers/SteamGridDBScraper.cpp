@@ -23,6 +23,8 @@ namespace
 {
 	const std::string STEAMGRIDDB_API_URL_BASE = "https://www.steamgriddb.com/api/v2";
 	const std::string STEAMGRIDDB_API_KEY_FILE_NAME = "steamgriddb.key";
+	const int STEAMGRIDDB_AUTO_ASSET_LIMIT = 1;
+	const int STEAMGRIDDB_MANUAL_ASSET_LIMIT = 6;
 
 	std::vector<std::string> getSteamGridDBApiKeyFilePaths()
 	{
@@ -127,7 +129,12 @@ namespace
 		return cleanName;
 	}
 
-	std::string addGridFilters(const std::string& url)
+	std::string getAssetLimitQuery(bool manualScrape)
+	{
+		return std::to_string(manualScrape ? STEAMGRIDDB_MANUAL_ASSET_LIMIT : STEAMGRIDDB_AUTO_ASSET_LIMIT);
+	}
+
+	std::string addGridFilters(const std::string& url, bool manualScrape)
 	{
 		return url + "?dimensions=600x900,342x482,660x930"
 			+ "&types=static"
@@ -135,27 +142,38 @@ namespace
 			+ "&nsfw=false"
 			+ "&humor=false"
 			+ "&epilepsy=false"
-			+ "&limit=1";
+			+ "&limit=" + getAssetLimitQuery(manualScrape);
 	}
 
-	std::string addHeroFilters(const std::string& url)
+	std::string addHeroFilters(const std::string& url, bool manualScrape)
 	{
 		return url + "?types=static"
 			+ "&mimes=image%2Fpng,image%2Fjpeg"
 			+ "&nsfw=false"
 			+ "&humor=false"
 			+ "&epilepsy=false"
-			+ "&limit=1";
+			+ "&limit=" + getAssetLimitQuery(manualScrape);
 	}
 
-	std::string addLogoFilters(const std::string& url)
+	std::string addLogoFilters(const std::string& url, bool manualScrape)
 	{
 		return url + "?types=static"
 			+ "&mimes=image%2Fpng"
 			+ "&nsfw=false"
 			+ "&humor=false"
 			+ "&epilepsy=false"
-			+ "&limit=1";
+			+ "&limit=" + getAssetLimitQuery(manualScrape);
+	}
+
+	std::string selectAsset(const std::vector<std::string>& assets, size_t index)
+	{
+		if (assets.empty())
+			return "";
+
+		if (index < assets.size())
+			return assets[index];
+
+		return assets.front();
 	}
 }
 
@@ -200,6 +218,7 @@ const std::set<Scraper::ScraperMediaSource>& SteamGridDBScraper::getSupportedMed
 	{
 		ScraperMediaSource::Box2d,
 		ScraperMediaSource::FanArt,
+		ScraperMediaSource::Marquee,
 		ScraperMediaSource::Wheel
 	};
 
@@ -251,29 +270,35 @@ void SteamGridDBRequest::preProcess(const std::string& response)
 	for (auto game : mGames)
 	{
 		auto id = std::to_string(game.id);
-		mDependencyQueue.push({ "grid:" + id, addGridFilters(STEAMGRIDDB_API_URL_BASE + "/grids/game/" + id) });
-		mDependencyQueue.push({ "hero:" + id, addHeroFilters(STEAMGRIDDB_API_URL_BASE + "/heroes/game/" + id) });
-		mDependencyQueue.push({ "logo:" + id, addLogoFilters(STEAMGRIDDB_API_URL_BASE + "/logos/game/" + id) });
+		mDependencyQueue.push({ "grid:" + id, addGridFilters(STEAMGRIDDB_API_URL_BASE + "/grids/game/" + id, mIsManualScrape) });
+		mDependencyQueue.push({ "hero:" + id, addHeroFilters(STEAMGRIDDB_API_URL_BASE + "/heroes/game/" + id, mIsManualScrape) });
+		mDependencyQueue.push({ "logo:" + id, addLogoFilters(STEAMGRIDDB_API_URL_BASE + "/logos/game/" + id, mIsManualScrape) });
 	}
 }
 
-std::string SteamGridDBRequest::getAssetUrl(const std::string& dependencyId)
+std::vector<std::string> SteamGridDBRequest::getAssetUrls(const std::string& dependencyId)
 {
+	std::vector<std::string> urls;
 	auto response = getDependencyResponse(dependencyId);
 	if (response.empty())
-		return "";
+		return urls;
 
 	Document doc;
 	doc.Parse(response.c_str());
 
 	if (doc.HasParseError() || !doc.HasMember("success") || !doc["success"].IsBool() || !doc["success"].GetBool() || !doc.HasMember("data") || !doc["data"].IsArray())
-		return "";
+		return urls;
 
 	const Value& data = doc["data"];
-	if (data.Empty() || !data[0].IsObject() || !data[0].HasMember("url") || !data[0]["url"].IsString())
-		return "";
+	for (SizeType i = 0; i < data.Size(); i++)
+	{
+		if (!data[i].IsObject() || !data[i].HasMember("url") || !data[i]["url"].IsString())
+			continue;
 
-	return data[0]["url"].GetString();
+		urls.push_back(data[i]["url"].GetString());
+	}
+
+	return urls;
 }
 
 bool SteamGridDBRequest::process(const std::string& response, std::vector<ScraperSearchResult>& results)
@@ -283,34 +308,55 @@ bool SteamGridDBRequest::process(const std::string& response, std::vector<Scrape
 
 	for (auto game : mGames)
 	{
-		ScraperSearchResult result("SteamGridDB");
 		auto id = std::to_string(game.id);
-		auto grid = getAssetUrl("grid:" + id);
-		auto hero = getAssetUrl("hero:" + id);
-		auto logo = getAssetUrl("logo:" + id);
+		auto grids = getAssetUrls("grid:" + id);
+		auto heroes = getAssetUrls("hero:" + id);
+		auto logos = getAssetUrls("logo:" + id);
 
-		result.mdl.set(MetaDataId::Name, game.name);
-
-		auto imageSource = Settings::getInstance()->getString("ScrapperImageSrc");
-		if (!imageSource.empty())
+		size_t variantCount = mIsManualScrape ? std::max({ grids.size(), heroes.size(), logos.size(), static_cast<size_t>(1) }) : 1;
+		for (size_t i = 0; i < variantCount; i++)
 		{
-			if (imageSource == "fanart" && !hero.empty())
-				result.urls[MetaDataId::Image] = ScraperSearchItem(hero);
-			else if (!grid.empty())
-				result.urls[MetaDataId::Image] = ScraperSearchItem(grid);
+			auto grid = selectAsset(grids, i);
+			auto hero = selectAsset(heroes, i);
+			auto logo = selectAsset(logos, i);
+
+			if (grid.empty() && hero.empty() && logo.empty())
+				continue;
+
+			ScraperSearchResult result("SteamGridDB");
+			result.mdl.set(MetaDataId::Name, game.name);
+			if (mIsManualScrape && variantCount > 1)
+				result.displayName = game.name + " [SteamGridDB art " + std::to_string(i + 1) + "/" + std::to_string(variantCount) + "]";
+
+			auto imageSource = Settings::getInstance()->getString("ScrapperImageSrc");
+			if (!imageSource.empty())
+			{
+				if (imageSource == "fanart" && !hero.empty())
+					result.urls[MetaDataId::Image] = ScraperSearchItem(hero);
+				else if (!grid.empty())
+					result.urls[MetaDataId::Image] = ScraperSearchItem(grid);
+			}
+
+			if (!Settings::getInstance()->getString("ScrapperThumbSrc").empty() && !grid.empty())
+				result.urls[MetaDataId::Thumbnail] = ScraperSearchItem(grid);
+
+			if (Settings::getInstance()->getBool("ScrapeFanart") && !hero.empty())
+				result.urls[MetaDataId::FanArt] = ScraperSearchItem(hero);
+
+			auto logoSource = Settings::getInstance()->getString("ScrapperLogoSrc");
+			if (!logoSource.empty())
+			{
+				if (logoSource == "marquee" && !hero.empty())
+					result.urls[MetaDataId::Marquee] = ScraperSearchItem(hero);
+				else if (!logo.empty())
+					result.urls[MetaDataId::Marquee] = ScraperSearchItem(logo);
+				else if (!hero.empty())
+					result.urls[MetaDataId::Marquee] = ScraperSearchItem(hero);
+			}
+
+			if (result.hasMedia())
+				results.push_back(result);
 		}
-
-		if (!Settings::getInstance()->getString("ScrapperThumbSrc").empty() && !grid.empty())
-			result.urls[MetaDataId::Thumbnail] = ScraperSearchItem(grid);
-
-		if (Settings::getInstance()->getBool("ScrapeFanart") && !hero.empty())
-			result.urls[MetaDataId::FanArt] = ScraperSearchItem(hero);
-
-		if (!Settings::getInstance()->getString("ScrapperLogoSrc").empty() && !logo.empty())
-			result.urls[MetaDataId::Marquee] = ScraperSearchItem(logo);
-
-		if (result.hasMedia())
-			results.push_back(result);
 	}
 
 	return true;

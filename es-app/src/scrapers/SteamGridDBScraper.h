@@ -51,7 +51,7 @@ private:
 	};
 
 	std::vector<Game> parseGames(const std::string& response);
-	std::string getAssetUrl(const std::string& dependencyId);
+	std::vector<std::string> getAssetUrls(const std::string& dependencyId);
 
 	LookupMode mLookupMode;
 	bool mIsManualScrape;

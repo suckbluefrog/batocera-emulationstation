@@ -56,6 +56,7 @@ struct ScraperSearchResult
 	MetaDataList	mdl;
 	std::string		p2k;
 	std::string		scraper;
+	std::string		displayName;
 
 	std::map<MetaDataId, ScraperSearchItem> urls;
 

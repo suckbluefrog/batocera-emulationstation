@@ -18,6 +18,14 @@
 #include "components/MultiLineMenuEntry.h"
 #include <thread>
 
+namespace
+{
+	std::string getScraperResultDisplayName(const ScraperSearchResult& result)
+	{
+		return result.displayName.empty() ? result.mdl.get(MetaDataId::Name) : result.displayName;
+	}
+}
+
 ScraperSearchComponent::ScraperSearchComponent(Window* window) : GuiComponent(window),
 	mGrid(window, Vector2i(5, 5)), mBusyAnim(window)
 {
@@ -441,7 +449,7 @@ void ScraperSearchComponent::onSearchDone(bool isReallyFinished)
 					icons += _U(" \uF07E");
 
 				row.elements.clear();
-				row.addElement(std::make_shared<TextComponent>(mWindow, result.mdl.get(MetaDataId::Name) + " " + icons, font, color), true);					
+				row.addElement(std::make_shared<TextComponent>(mWindow, getScraperResultDisplayName(result) + " " + icons, font, color), true);
 				row.makeAcceptInputHandler([this, result] { returnResult(result); });
 
 				mResultList->addRow(row, false, true, std::to_string(i));
@@ -503,7 +511,7 @@ void ScraperSearchComponent::updateInfoPane()
 	if (i != -1 && (int)allResults.size() > i)
 	{
 		ScraperSearchResult& res = allResults.at(i).second;
-		mResultName->setText(res.mdl.get(MetaDataId::Name));
+		mResultName->setText(getScraperResultDisplayName(res));
 		mResultDesc->setText(res.mdl.get(MetaDataId::Desc));
 
 		mResultThumbnail->setImage("");
