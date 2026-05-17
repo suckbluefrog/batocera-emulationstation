@@ -97,6 +97,18 @@ enum MetaDataId
 	PCGamingWikiUrl = 60,
 	PCGamingWikiDevelopers = 61,
 	PCGamingWikiPublishers = 62,
+	LauncherSource = 63,
+	LauncherStore = 64,
+	LauncherId = 65,
+	LauncherInstallPath = 66,
+	LauncherExecutable = 67,
+	LauncherRunner = 68,
+	LauncherWinePrefix = 69,
+	LauncherWineVersion = 70,
+	LauncherStoreUrl = 71,
+	LauncherCloudSave = 72,
+	EpicNamespace = 73,
+	GogId = 74,
 
 	// Important : Control value
 	MetaDataIdCount

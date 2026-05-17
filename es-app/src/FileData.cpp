@@ -86,6 +86,30 @@ static std::string formatProtonDBSummary(FileData* file)
 	return summary;
 }
 
+static std::string formatLauncherSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto store = file->getMetadata(MetaDataId::LauncherStore);
+	auto source = file->getMetadata(MetaDataId::LauncherSource);
+	auto runner = file->getMetadata(MetaDataId::LauncherRunner);
+	auto id = file->getMetadata(MetaDataId::LauncherId);
+
+	std::string summary;
+	if (!store.empty())
+		summary = store;
+	else
+		summary = source;
+
+	if (!runner.empty())
+		summary += summary.empty() ? runner : " / " + runner;
+	if (!id.empty())
+		summary += summary.empty() ? id : " (" + id + ")";
+
+	return summary;
+}
+
 static std::map<std::string, std::function<BindableProperty(FileData*)>> properties =
 {
 	{ "name",				[](FileData* file) { return file->getName(); } },
@@ -117,6 +141,9 @@ static std::map<std::string, std::function<BindableProperty(FileData*)>> propert
 	{ "protondbSummary",	[](FileData* file) { return formatProtonDBSummary(file); } },
 	{ "pcgamingwikiPage",	[](FileData* file) { return file->getMetadata(MetaDataId::PCGamingWikiPage); } },
 	{ "pcgamingwikiUrl",	[](FileData* file) { return file->getMetadata(MetaDataId::PCGamingWikiUrl); } },
+	{ "launcherSummary",	[](FileData* file) { return formatLauncherSummary(file); } },
+	{ "launcherStore",		[](FileData* file) { return file->getMetadata(MetaDataId::LauncherStore); } },
+	{ "launcherInstallPath", [](FileData* file) { return file->getMetadata(MetaDataId::LauncherInstallPath); } },
 	{ "systemName",			[](FileData* file) { return file->getSourceFileData()->getSystem()->getFullName(); } },
 	{ "fullName",			[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file); } },
 	{ "fullNameNoFavorite",	[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file, false, false); } },

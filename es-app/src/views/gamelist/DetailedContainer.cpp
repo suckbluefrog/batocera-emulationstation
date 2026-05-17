@@ -68,6 +68,30 @@ static std::string getProtonDBSummary(FileData* file)
 	return summary;
 }
 
+static std::string getLauncherSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto store = file->getMetadata(MetaDataId::LauncherStore);
+	auto source = file->getMetadata(MetaDataId::LauncherSource);
+	auto runner = file->getMetadata(MetaDataId::LauncherRunner);
+	auto id = file->getMetadata(MetaDataId::LauncherId);
+
+	std::string summary;
+	if (!store.empty())
+		summary = store;
+	else
+		summary = source;
+
+	if (!runner.empty())
+		summary += summary.empty() ? runner : " / " + runner;
+	if (!id.empty())
+		summary += summary.empty() ? id : " (" + id + ")";
+
+	return summary;
+}
+
 DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* list, Window* window, DetailedContainerType viewType) :
 	mParent(parent), mList(list), mWindow(window), mViewType(viewType),
 	mDescription(window),
@@ -88,13 +112,13 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window),
 	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window), mLblGameTime(window), mLblFavorite(window),
 	mLblHltbMain(window), mLblHltbExtra(window), mLblHltbCompletionist(window), mLblHltbProgress(window),
-	mLblProtonDB(window), mLblPCGamingWiki(window),
+	mLblProtonDB(window), mLblPCGamingWiki(window), mLblLauncher(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window),
 	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window),
 	mName(window), mGameTime(window), mTextFavorite(window),
 	mHltbMain(window), mHltbExtra(window), mHltbCompletionist(window), mHltbProgress(window),
-	mProtonDB(window), mPCGamingWiki(window), mIsPerGameExtrasPathBinding(false)
+	mProtonDB(window), mPCGamingWiki(window), mLauncher(window), mIsPerGameExtrasPathBinding(false)
 {
 	std::vector<MdImage> mdl = 
 	{ 
@@ -144,6 +168,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mLblHltbProgress.setVisible(false);
 		mLblProtonDB.setVisible(false);
 		mLblPCGamingWiki.setVisible(false);
+		mLblLauncher.setVisible(false);
 		mName.setVisible(false);
 		mPlayCount.setVisible(false);
 		mLastPlayed.setVisible(false);
@@ -153,6 +178,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mHltbProgress.setVisible(false);
 		mProtonDB.setVisible(false);
 		mPCGamingWiki.setVisible(false);
+		mLauncher.setVisible(false);
 		mPlayers.setVisible(false);
 		mGenre.setVisible(false);
 		mPublisher.setVisible(false);
@@ -177,6 +203,8 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mProtonDB.setVisible(false);
 	mLblPCGamingWiki.setVisible(false);
 	mPCGamingWiki.setVisible(false);
+	mLblLauncher.setVisible(false);
+	mLauncher.setVisible(false);
 	mLblFavorite.setVisible(false);
 	mTextFavorite.setVisible(false);
 
@@ -230,6 +258,9 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblPCGamingWiki.setText(_("PCGamingWiki") + ": ");
 	addChild(&mLblPCGamingWiki);
 	addChild(&mPCGamingWiki);
+	mLblLauncher.setText(_("Launcher") + ": ");
+	addChild(&mLblLauncher);
+	addChild(&mLauncher);
 	mLblFavorite.setText(_("Favorite") + ": ");
 	addChild(&mLblFavorite);
 	addChild(&mTextFavorite);
@@ -370,6 +401,7 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 		{ "text",     "md_hltbprogress", &mHltbProgress, "md_lbl_hltbprogress", &mLblHltbProgress },
 		{ "text",     "md_protondb",    &mProtonDB,     "md_lbl_protondb",    &mLblProtonDB },
 		{ "text",     "md_pcgamingwiki", &mPCGamingWiki, "md_lbl_pcgamingwiki", &mLblPCGamingWiki },
+		{ "text",     "md_launcher",    &mLauncher,     "md_lbl_launcher",    &mLblLauncher },
 		{ "text",     "md_favorite",    &mTextFavorite, "md_lbl_favorite",    &mLblFavorite }
 	};
 	return mdl;	
@@ -826,6 +858,7 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mHltbProgress.setValue("");
 	mProtonDB.setValue("");
 	mPCGamingWiki.setValue("");
+	mLauncher.setValue("");
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1156,6 +1189,7 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mHltbProgress.setValue(getHltbProgress(file));
 			mProtonDB.setValue(getProtonDBSummary(file));
 			mPCGamingWiki.setValue(file->getMetadata(MetaDataId::PCGamingWikiPage));
+			mLauncher.setValue(getLauncherSummary(file));
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);

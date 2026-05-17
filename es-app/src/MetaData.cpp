@@ -26,7 +26,8 @@ static std::map<std::string, int> KnowScrapersIds =
 	{ "SteamGridDB", 4 },
 	{ "HowLongToBeat", 5 },
 	{ "ProtonDB", 6 },
-	{ "PCGamingWiki", 7 }
+	{ "PCGamingWiki", 7 },
+	{ "LocalLaunchers", 8 }
 };
 
 void MetaDataList::initMetadata()
@@ -112,6 +113,18 @@ void MetaDataList::initMetadata()
 		{ PCGamingWikiUrl,  "pcgwurl",     MD_STRING,              "",                 false,      _("PCGamingWiki URL"),     _("PCGamingWiki game page"), false },
 		{ PCGamingWikiDevelopers, "pcgwdevelopers", MD_STRING,     "",                 false,      _("PCGamingWiki developers"), _("PCGamingWiki developers"), false },
 		{ PCGamingWikiPublishers, "pcgwpublishers", MD_STRING,     "",                 false,      _("PCGamingWiki publishers"), _("PCGamingWiki publishers"), false },
+		{ LauncherSource,   "launchersource", MD_STRING,           "",                 false,      _("Launcher source"),      _("external launcher source"), false },
+		{ LauncherStore,    "launcherstore", MD_STRING,            "",                 false,      _("Launcher store"),       _("external launcher store"), false },
+		{ LauncherId,       "launcherid",  MD_STRING,              "",                 false,      _("Launcher ID"),          _("external launcher game ID"), false },
+		{ LauncherInstallPath, "launcherinstallpath", MD_STRING,    "",                 false,      _("Launcher install path"), _("external launcher install path"), false },
+		{ LauncherExecutable, "launcherexecutable", MD_STRING,     "",                 false,      _("Launcher executable"),  _("external launcher executable"), false },
+		{ LauncherRunner,   "launcherrunner", MD_STRING,           "",                 false,      _("Launcher runner"),      _("external launcher runner"), false },
+		{ LauncherWinePrefix, "launcherwineprefix", MD_STRING,     "",                 false,      _("Launcher Wine prefix"), _("external launcher Wine prefix"), false },
+		{ LauncherWineVersion, "launcherwineversion", MD_STRING,   "",                 false,      _("Launcher Wine version"), _("external launcher Wine version"), false },
+		{ LauncherStoreUrl, "launcherstoreurl", MD_STRING,         "",                 false,      _("Launcher store URL"),   _("external launcher store URL"), false },
+		{ LauncherCloudSave, "launchercloudsave", MD_STRING,       "",                 false,      _("Launcher cloud save"),  _("external launcher cloud save path"), false },
+		{ EpicNamespace,    "epicnamespace", MD_STRING,            "",                 false,      _("Epic namespace"),       _("Epic namespace"), false },
+		{ GogId,            "gogid",       MD_STRING,              "",                 false,      _("GOG ID"),               _("GOG game ID"), false },
 
 		{ Language,         "lang",        MD_STRING,              "",                 false,      _("Languages"),            _("this game's languages"),				false },
 		{ Region,           "region",      MD_STRING,              "",                 false,      _("Region"),               _("this game's region"),					false },
@@ -573,6 +586,13 @@ void MetaDataList::importScrappedMetadata(const MetaDataList& source)
 
 		if ((mdd.id == MetaDataId::PCGamingWikiPage || mdd.id == MetaDataId::PCGamingWikiPageId || mdd.id == MetaDataId::PCGamingWikiUrl ||
 			mdd.id == MetaDataId::PCGamingWikiDevelopers || mdd.id == MetaDataId::PCGamingWikiPublishers) &&
+			source.get(mdd.id).empty())
+			continue;
+
+		if ((mdd.id == MetaDataId::LauncherSource || mdd.id == MetaDataId::LauncherStore || mdd.id == MetaDataId::LauncherId ||
+			mdd.id == MetaDataId::LauncherInstallPath || mdd.id == MetaDataId::LauncherExecutable || mdd.id == MetaDataId::LauncherRunner ||
+			mdd.id == MetaDataId::LauncherWinePrefix || mdd.id == MetaDataId::LauncherWineVersion || mdd.id == MetaDataId::LauncherStoreUrl ||
+			mdd.id == MetaDataId::LauncherCloudSave || mdd.id == MetaDataId::EpicNamespace || mdd.id == MetaDataId::GogId) &&
 			source.get(mdd.id).empty())
 			continue;
 

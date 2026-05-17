@@ -8,6 +8,7 @@
 #include "HowLongToBeatScraper.h"
 #include "ProtonDBScraper.h"
 #include "PCGamingWikiScraper.h"
+#include "LocalLauncherMetadataScraper.h"
 #include "Log.h"
 #include "Settings.h"
 #include "SystemData.h"
@@ -42,6 +43,7 @@ std::vector<std::pair<std::string, Scraper*>> Scraper::scrapers
 	{ "HowLongToBeat", new HowLongToBeatScraper() },
 	{ "ProtonDB", new ProtonDBScraper() },
 	{ "PCGamingWiki", new PCGamingWikiScraper() },
+	{ "LocalLaunchers", new LocalLauncherMetadataScraper() },
 	{ "SteamGridDB", new SteamGridDBScraper() },
 	{ "ArcadeDB", new ArcadeDBScraper() }
 };
