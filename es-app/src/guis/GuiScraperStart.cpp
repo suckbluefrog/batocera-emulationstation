@@ -363,6 +363,7 @@ void GuiScraperStart::loadAccountsPage()
 
 	addGroup(_("STEAMGRIDDB"));
 	addInputTextConfigRow(_("API KEY"), "steamgriddb.api_key", true);
+	addWithDescription(_("API KEY FILE"), _("Optional fallback: put the SteamGridDB API key in /userdata/system/configs/emulationstation/steamgriddb.key."), nullptr);
 }
 
 void GuiScraperStart::pressedStart()

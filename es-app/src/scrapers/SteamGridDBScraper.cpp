@@ -2,6 +2,7 @@
 
 #include "FileData.h"
 #include "Log.h"
+#include "Paths.h"
 #include "Settings.h"
 #include "SystemConf.h"
 #include "SystemData.h"
@@ -14,16 +15,75 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <stdexcept>
+#include <vector>
 
 using namespace rapidjson;
 
 namespace
 {
 	const std::string STEAMGRIDDB_API_URL_BASE = "https://www.steamgriddb.com/api/v2";
+	const std::string STEAMGRIDDB_API_KEY_FILE_NAME = "steamgriddb.key";
+
+	std::vector<std::string> getSteamGridDBApiKeyFilePaths()
+	{
+		std::vector<std::string> paths;
+		paths.push_back(Utils::FileSystem::combine(Paths::getUserEmulationStationPath(), STEAMGRIDDB_API_KEY_FILE_NAME));
+		paths.push_back("/userdata/system/" + STEAMGRIDDB_API_KEY_FILE_NAME);
+		return paths;
+	}
+
+	std::string unwrapSteamGridDBApiKey(std::string key)
+	{
+		key = Utils::String::trim(key);
+		if (key.size() >= 2 && ((key.front() == '"' && key.back() == '"') || (key.front() == '\'' && key.back() == '\'')))
+			key = Utils::String::trim(key.substr(1, key.size() - 2));
+
+		return key;
+	}
+
+	std::string extractSteamGridDBApiKey(const std::string& contents)
+	{
+		for (auto line : Utils::String::splitAny(contents, "\r\n", true))
+		{
+			line = Utils::String::trim(line);
+			if (line.empty() || Utils::String::startsWith(line, "#") || Utils::String::startsWith(line, ";"))
+				continue;
+
+			auto equalPos = line.find('=');
+			if (equalPos != std::string::npos)
+			{
+				auto key = Utils::String::trim(line.substr(0, equalPos));
+				if (key == "steamgriddb.api_key" || key == "api_key" || key == "key")
+					line = line.substr(equalPos + 1);
+				else
+					continue;
+			}
+
+			line = unwrapSteamGridDBApiKey(line);
+			if (!line.empty())
+				return line;
+		}
+
+		return "";
+	}
 
 	std::string getSteamGridDBApiKey()
 	{
-		return SystemConf::getInstance()->get("steamgriddb.api_key");
+		auto apiKey = unwrapSteamGridDBApiKey(SystemConf::getInstance()->get("steamgriddb.api_key"));
+		if (!apiKey.empty())
+			return apiKey;
+
+		for (auto path : getSteamGridDBApiKeyFilePaths())
+		{
+			if (!Utils::FileSystem::exists(path))
+				continue;
+
+			apiKey = extractSteamGridDBApiKey(Utils::FileSystem::readAllText(path));
+			if (!apiKey.empty())
+				return apiKey;
+		}
+
+		return "";
 	}
 
 	HttpReqOptions getSteamGridDBOptions()
