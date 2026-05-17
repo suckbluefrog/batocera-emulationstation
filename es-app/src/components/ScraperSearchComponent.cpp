@@ -286,6 +286,9 @@ void ScraperSearchComponent::search(const ScraperSearchParams& params)
 
 	for (auto scraperName : Scraper::getScraperList())
 	{
+		if (scraperName == "Mixed")
+			continue;
+
 		auto scraper = Scraper::getScraper(scraperName);
 		if (scraper == nullptr || !scraper->isSupportedPlatform(params.system))
 			continue;

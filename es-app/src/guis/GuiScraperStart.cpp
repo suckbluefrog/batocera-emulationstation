@@ -276,6 +276,18 @@ void GuiScraperStart::loadSettingsPage()
 	addSwitch(_("OVERWRITE DESCRIPTIONS"), "ScrapeDescription", true);
 	addSwitch(_("OVERWRITE MEDIAS"), "ScrapeOverWrite", true);
 
+	if (scraper == "Mixed")
+	{
+		if (Settings::getInstance()->getString("MixedScraperMetadataPriority").empty())
+			Settings::getInstance()->setString("MixedScraperMetadataPriority", "LocalLaunchers;ScreenScraper;HfsDB;IGDB;HowLongToBeat;ProtonDB;PCGamingWiki;ArcadeDB;TheGamesDB");
+		if (Settings::getInstance()->getString("MixedScraperMediaPriority").empty())
+			Settings::getInstance()->setString("MixedScraperMediaPriority", "SteamGridDB;ScreenScraper;HfsDB;ArcadeDB;IGDB;TheGamesDB");
+
+		addGroup(_("MIXED SCRAPER PRIORITY"));
+		addInputTextConfigRow(_("METADATA PRIORITY"), "MixedScraperMetadataPriority", false, true);
+		addInputTextConfigRow(_("MEDIA PRIORITY"), "MixedScraperMediaPriority", false, true);
+	}
+
 	addGroup(_("SCRAPE FOR"));
 
 	if (scrap->isMediaSupported(Scraper::ScraperMediaSource::ShortTitle))

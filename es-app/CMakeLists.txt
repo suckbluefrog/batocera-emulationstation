@@ -117,6 +117,7 @@ set(ES_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ProtonDBScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/PCGamingWikiScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/LocalLauncherMetadataScraper.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/MixedScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/SteamGridDBScraper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ScreenScraper.h    
 
@@ -228,6 +229,7 @@ set(ES_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ProtonDBScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/PCGamingWikiScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/LocalLauncherMetadataScraper.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/MixedScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/SteamGridDBScraper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ScreenScraper.cpp	
 

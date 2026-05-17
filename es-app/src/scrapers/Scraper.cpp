@@ -9,6 +9,7 @@
 #include "ProtonDBScraper.h"
 #include "PCGamingWikiScraper.h"
 #include "LocalLauncherMetadataScraper.h"
+#include "MixedScraper.h"
 #include "Log.h"
 #include "Settings.h"
 #include "SystemData.h"
@@ -27,6 +28,8 @@
 
 std::vector<std::pair<std::string, Scraper*>> Scraper::scrapers
 {
+	{ "Mixed", new MixedScraper() },
+
 #ifdef SCREENSCRAPER_DEV_LOGIN
 	{ "ScreenScraper", new ScreenScraperScraper() },
 #endif
