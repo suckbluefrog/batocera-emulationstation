@@ -34,6 +34,7 @@
 #include "Paths.h"
 #include "resources/TextureData.h"
 #include "views/gamelist/GameNameFormatter.h"
+#include <vector>
 
 using namespace Utils::Platform;
 
@@ -709,24 +710,25 @@ static int getLaunchVideoMaxDuration(FileData* game)
 	return Math::clamp(0, 3600, Utils::String::toInteger(value));
 }
 
-static std::string getLaunchVideoCommand(const std::string& video, int maxDuration)
+static std::vector<std::pair<std::string, std::string>> getLaunchVideoCommands(const std::string& video, int maxDuration)
 {
+	std::vector<std::pair<std::string, std::string>> commands;
 	auto escapedVideo = Utils::FileSystem::getEscapedPath(video);
 	auto duration = maxDuration > 0 ? std::to_string(maxDuration) : "";
 
-	if (Utils::FileSystem::exists("/usr/bin/mpv"))
-		return std::string("/usr/bin/mpv --fs --no-terminal --really-quiet --no-osc --no-input-default-bindings --keep-open=no ") +
-			(duration.empty() ? "" : "--length=" + duration + " ") + "-- " + escapedVideo;
-
 	if (Utils::FileSystem::exists("/usr/bin/cvlc"))
-		return std::string("/usr/bin/cvlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
-			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit");
+		commands.push_back({ "cvlc", std::string("/usr/bin/cvlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
+			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit") });
 
 	if (Utils::FileSystem::exists("/usr/bin/vlc"))
-		return std::string("/usr/bin/vlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
-			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit");
+		commands.push_back({ "vlc", std::string("/usr/bin/vlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
+			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit") });
 
-	return "";
+	if (Utils::FileSystem::exists("/usr/bin/mpv"))
+		commands.push_back({ "mpv", std::string("/usr/bin/mpv --fs --no-terminal --no-config --no-osc --no-input-default-bindings --keep-open=no ") +
+			(duration.empty() ? "" : "--length=" + duration + " ") + "-- " + escapedVideo });
+
+	return commands;
 }
 
 static void playLaunchVideo(FileData* game)
@@ -735,22 +737,29 @@ static void playLaunchVideo(FileData* game)
 	if (video.empty())
 		return;
 
-	auto command = getLaunchVideoCommand(video, getLaunchVideoMaxDuration(game));
-	if (command.empty())
+	auto commands = getLaunchVideoCommands(video, getLaunchVideoMaxDuration(game));
+	if (commands.empty())
 	{
 		LOG(LogWarning) << "Launch video found but no supported player is available: " << video;
 		return;
 	}
 
-	LOG(LogInfo) << "Playing launch video: " << video;
+	for (auto command : commands)
+	{
+		LOG(LogInfo) << "Playing launch video with " << command.first << ": " << video;
 
-	ProcessStartInfo process(command);
-	process.showWindow = false;
+		ProcessStartInfo process(command.second);
+		process.showWindow = false;
 #ifndef WIN32
-	process.stderrFilename = "es_launch_video_stderr.log";
-	process.stdoutFilename = "es_launch_video_stdout.log";
+		process.stderrFilename = "es_launch_video_" + command.first + "_stderr.log";
+		process.stdoutFilename = "es_launch_video_" + command.first + "_stdout.log";
 #endif
-	process.run();
+		auto exitCode = process.run();
+		if (exitCode == 0)
+			return;
+
+		LOG(LogWarning) << "Launch video player failed (" << command.first << ", exit " << exitCode << "): " << video;
+	}
 }
 
 std::string FileData::getlaunchCommand(LaunchGameOptions& options, bool includeControllers)
