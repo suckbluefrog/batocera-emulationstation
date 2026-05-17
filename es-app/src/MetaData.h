@@ -85,6 +85,13 @@ enum MetaDataId
 	HltbCompletionistTime = 48,
 	HltbAllStylesTime = 49,
 	HltbUrl = 50,
+	SteamAppId = 51,
+	ProtonDBTier = 52,
+	ProtonDBConfidence = 53,
+	ProtonDBScore = 54,
+	ProtonDBTotal = 55,
+	ProtonDBTrendingTier = 56,
+	ProtonDBUrl = 57,
 
 	// Important : Control value
 	MetaDataIdCount

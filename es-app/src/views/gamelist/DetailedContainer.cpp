@@ -47,6 +47,27 @@ static std::string getHltbProgress(FileData* file)
 	return secondsToDisplay(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
 }
 
+static std::string getProtonDBSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto tier = file->getMetadata(MetaDataId::ProtonDBTier);
+	if (tier.empty())
+		return "";
+
+	auto summary = Utils::String::proper(tier);
+	auto confidence = file->getMetadata(MetaDataId::ProtonDBConfidence);
+	auto total = file->getMetadata(MetaDataId::ProtonDBTotal);
+
+	if (!confidence.empty())
+		summary += " / " + confidence;
+	if (!total.empty() && Utils::String::toInteger(total) > 0)
+		summary += " (" + total + ")";
+
+	return summary;
+}
+
 DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* list, Window* window, DetailedContainerType viewType) :
 	mParent(parent), mList(list), mWindow(window), mViewType(viewType),
 	mDescription(window),
@@ -67,11 +88,13 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window),
 	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window), mLblGameTime(window), mLblFavorite(window),
 	mLblHltbMain(window), mLblHltbExtra(window), mLblHltbCompletionist(window), mLblHltbProgress(window),
+	mLblProtonDB(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window),
 	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window),
 	mName(window), mGameTime(window), mTextFavorite(window),
-	mHltbMain(window), mHltbExtra(window), mHltbCompletionist(window), mHltbProgress(window), mIsPerGameExtrasPathBinding(false)
+	mHltbMain(window), mHltbExtra(window), mHltbCompletionist(window), mHltbProgress(window),
+	mProtonDB(window), mIsPerGameExtrasPathBinding(false)
 {
 	std::vector<MdImage> mdl = 
 	{ 
@@ -119,6 +142,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mLblHltbExtra.setVisible(false);
 		mLblHltbCompletionist.setVisible(false);
 		mLblHltbProgress.setVisible(false);
+		mLblProtonDB.setVisible(false);
 		mName.setVisible(false);
 		mPlayCount.setVisible(false);
 		mLastPlayed.setVisible(false);
@@ -126,6 +150,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mHltbExtra.setVisible(false);
 		mHltbCompletionist.setVisible(false);
 		mHltbProgress.setVisible(false);
+		mProtonDB.setVisible(false);
 		mPlayers.setVisible(false);
 		mGenre.setVisible(false);
 		mPublisher.setVisible(false);
@@ -146,6 +171,8 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mHltbCompletionist.setVisible(false);
 	mLblHltbProgress.setVisible(false);
 	mHltbProgress.setVisible(false);
+	mLblProtonDB.setVisible(false);
+	mProtonDB.setVisible(false);
 	mLblFavorite.setVisible(false);
 	mTextFavorite.setVisible(false);
 
@@ -193,6 +220,9 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblHltbProgress.setText(_("HLTB progress") + ": ");
 	addChild(&mLblHltbProgress);
 	addChild(&mHltbProgress);
+	mLblProtonDB.setText(_("ProtonDB") + ": ");
+	addChild(&mLblProtonDB);
+	addChild(&mProtonDB);
 	mLblFavorite.setText(_("Favorite") + ": ");
 	addChild(&mLblFavorite);
 	addChild(&mTextFavorite);
@@ -331,6 +361,7 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 		{ "text",     "md_hltbextra",   &mHltbExtra,    "md_lbl_hltbextra",   &mLblHltbExtra },
 		{ "text",     "md_hltbcompletionist", &mHltbCompletionist, "md_lbl_hltbcompletionist", &mLblHltbCompletionist },
 		{ "text",     "md_hltbprogress", &mHltbProgress, "md_lbl_hltbprogress", &mLblHltbProgress },
+		{ "text",     "md_protondb",    &mProtonDB,     "md_lbl_protondb",    &mLblProtonDB },
 		{ "text",     "md_favorite",    &mTextFavorite, "md_lbl_favorite",    &mLblFavorite }
 	};
 	return mdl;	
@@ -785,6 +816,7 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mHltbExtra.setValue("");
 	mHltbCompletionist.setValue("");
 	mHltbProgress.setValue("");
+	mProtonDB.setValue("");
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1113,6 +1145,7 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mHltbExtra.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime)));
 			mHltbCompletionist.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime)));
 			mHltbProgress.setValue(getHltbProgress(file));
+			mProtonDB.setValue(getProtonDBSummary(file));
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);

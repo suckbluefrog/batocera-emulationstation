@@ -65,6 +65,27 @@ static std::string formatHltbProgress(FileData* file)
 	return formatSeconds(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
 }
 
+static std::string formatProtonDBSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto tier = file->getMetadata(MetaDataId::ProtonDBTier);
+	if (tier.empty())
+		return "";
+
+	auto confidence = file->getMetadata(MetaDataId::ProtonDBConfidence);
+	auto total = file->getMetadata(MetaDataId::ProtonDBTotal);
+	auto summary = Utils::String::proper(tier);
+
+	if (!confidence.empty())
+		summary += " / " + confidence;
+	if (!total.empty() && Utils::String::toInteger(total) > 0)
+		summary += " (" + total + ")";
+
+	return summary;
+}
+
 static std::map<std::string, std::function<BindableProperty(FileData*)>> properties =
 {
 	{ "name",				[](FileData* file) { return file->getName(); } },
@@ -91,6 +112,9 @@ static std::map<std::string, std::function<BindableProperty(FileData*)>> propert
 	{ "hltbCompletionist",	[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbCompletionistTime)); } },
 	{ "hltbAllStyles",		[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbAllStylesTime)); } },
 	{ "hltbProgress",		[](FileData* file) { return formatHltbProgress(file); } },
+	{ "steamAppId",			[](FileData* file) { return file->getMetadata(MetaDataId::SteamAppId); } },
+	{ "protondbTier",		[](FileData* file) { return file->getMetadata(MetaDataId::ProtonDBTier); } },
+	{ "protondbSummary",	[](FileData* file) { return formatProtonDBSummary(file); } },
 	{ "systemName",			[](FileData* file) { return file->getSourceFileData()->getSystem()->getFullName(); } },
 	{ "fullName",			[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file); } },
 	{ "fullNameNoFavorite",	[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file, false, false); } },

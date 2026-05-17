@@ -114,6 +114,7 @@ set(ES_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/HfsDBScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/IGDBScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/HowLongToBeatScraper.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ProtonDBScraper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/SteamGridDBScraper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ScreenScraper.h    
 
@@ -222,6 +223,7 @@ set(ES_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/HfsDBScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/IGDBScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/HowLongToBeatScraper.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ProtonDBScraper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/SteamGridDBScraper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/ScreenScraper.cpp	
 

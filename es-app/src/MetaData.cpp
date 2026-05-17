@@ -24,7 +24,8 @@ static std::map<std::string, int> KnowScrapersIds =
 	{ "HfsDB", 2 },
 	{ "ArcadeDB", 3 },
 	{ "SteamGridDB", 4 },
-	{ "HowLongToBeat", 5 }
+	{ "HowLongToBeat", 5 },
+	{ "ProtonDB", 6 }
 };
 
 void MetaDataList::initMetadata()
@@ -98,6 +99,13 @@ void MetaDataList::initMetadata()
 		{ HltbCompletionistTime, "hltbcompletionist", MD_INT,      "0",                false,      _("HLTB completionist"),   _("HowLongToBeat completionist time (seconds)"), false },
 		{ HltbAllStylesTime, "hltballstyles", MD_INT,              "0",                false,      _("HLTB all styles"),      _("HowLongToBeat all styles time (seconds)"), false },
 		{ HltbUrl,          "hltburl",     MD_STRING,              "",                 false,      _("HowLongToBeat URL"),    _("HowLongToBeat game page"), false },
+		{ SteamAppId,       "steamappid",  MD_INT,                 "",                 false,      _("Steam AppID"),          _("Steam application ID"), false },
+		{ ProtonDBTier,     "protondbtier", MD_STRING,             "",                 false,      _("ProtonDB tier"),        _("ProtonDB compatibility tier"), false },
+		{ ProtonDBConfidence, "protondbconfidence", MD_STRING,     "",                 false,      _("ProtonDB confidence"),  _("ProtonDB confidence"), false },
+		{ ProtonDBScore,    "protondbscore", MD_FLOAT,             "",                 false,      _("ProtonDB score"),       _("ProtonDB score"), false },
+		{ ProtonDBTotal,    "protondbtotal", MD_INT,               "",                 false,      _("ProtonDB reports"),     _("ProtonDB report count"), false },
+		{ ProtonDBTrendingTier, "protondbtrending", MD_STRING,     "",                 false,      _("ProtonDB trending"),    _("ProtonDB trending tier"), false },
+		{ ProtonDBUrl,      "protondburl", MD_STRING,              "",                 false,      _("ProtonDB URL"),         _("ProtonDB game page"), false },
 
 		{ Language,         "lang",        MD_STRING,              "",                 false,      _("Languages"),            _("this game's languages"),				false },
 		{ Region,           "region",      MD_STRING,              "",                 false,      _("Region"),               _("this game's region"),					false },
@@ -542,7 +550,7 @@ void MetaDataList::importScrappedMetadata(const MetaDataList& source)
 		if (mdd.id == MetaDataId::Favorite || mdd.id == MetaDataId::Hidden || mdd.id == MetaDataId::Emulator || mdd.id == MetaDataId::Core)
 			continue;
 
-		if (mdd.id == MetaDataId::HltbId || mdd.id == MetaDataId::HltbMainTime || mdd.id == MetaDataId::HltbExtraTime ||
+		if (mdd.id == MetaDataId::SteamAppId || mdd.id == MetaDataId::HltbId || mdd.id == MetaDataId::HltbMainTime || mdd.id == MetaDataId::HltbExtraTime ||
 			mdd.id == MetaDataId::HltbCompletionistTime || mdd.id == MetaDataId::HltbAllStylesTime)
 		{
 			if (Utils::String::toInteger(source.get(mdd.id)) <= 0)
@@ -550,6 +558,11 @@ void MetaDataList::importScrappedMetadata(const MetaDataList& source)
 		}
 
 		if (mdd.id == MetaDataId::HltbUrl && source.get(mdd.id).empty())
+			continue;
+
+		if ((mdd.id == MetaDataId::ProtonDBTier || mdd.id == MetaDataId::ProtonDBConfidence || mdd.id == MetaDataId::ProtonDBScore ||
+			mdd.id == MetaDataId::ProtonDBTotal || mdd.id == MetaDataId::ProtonDBTrendingTier || mdd.id == MetaDataId::ProtonDBUrl) &&
+			source.get(mdd.id).empty())
 			continue;
 
 		if (mdd.id == MetaDataId::Image && (source.get(mdd.id).empty() || (type & MetaDataImportType::Types::IMAGE) != MetaDataImportType::Types::IMAGE))
