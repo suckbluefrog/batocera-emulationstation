@@ -25,7 +25,8 @@ static std::map<std::string, int> KnowScrapersIds =
 	{ "ArcadeDB", 3 },
 	{ "SteamGridDB", 4 },
 	{ "HowLongToBeat", 5 },
-	{ "ProtonDB", 6 }
+	{ "ProtonDB", 6 },
+	{ "PCGamingWiki", 7 }
 };
 
 void MetaDataList::initMetadata()
@@ -106,6 +107,11 @@ void MetaDataList::initMetadata()
 		{ ProtonDBTotal,    "protondbtotal", MD_INT,               "",                 false,      _("ProtonDB reports"),     _("ProtonDB report count"), false },
 		{ ProtonDBTrendingTier, "protondbtrending", MD_STRING,     "",                 false,      _("ProtonDB trending"),    _("ProtonDB trending tier"), false },
 		{ ProtonDBUrl,      "protondburl", MD_STRING,              "",                 false,      _("ProtonDB URL"),         _("ProtonDB game page"), false },
+		{ PCGamingWikiPage, "pcgwpage",    MD_STRING,              "",                 false,      _("PCGamingWiki page"),    _("PCGamingWiki page"), false },
+		{ PCGamingWikiPageId, "pcgwpageid", MD_INT,                "",                 false,      _("PCGamingWiki page ID"), _("PCGamingWiki page ID"), false },
+		{ PCGamingWikiUrl,  "pcgwurl",     MD_STRING,              "",                 false,      _("PCGamingWiki URL"),     _("PCGamingWiki game page"), false },
+		{ PCGamingWikiDevelopers, "pcgwdevelopers", MD_STRING,     "",                 false,      _("PCGamingWiki developers"), _("PCGamingWiki developers"), false },
+		{ PCGamingWikiPublishers, "pcgwpublishers", MD_STRING,     "",                 false,      _("PCGamingWiki publishers"), _("PCGamingWiki publishers"), false },
 
 		{ Language,         "lang",        MD_STRING,              "",                 false,      _("Languages"),            _("this game's languages"),				false },
 		{ Region,           "region",      MD_STRING,              "",                 false,      _("Region"),               _("this game's region"),					false },
@@ -562,6 +568,11 @@ void MetaDataList::importScrappedMetadata(const MetaDataList& source)
 
 		if ((mdd.id == MetaDataId::ProtonDBTier || mdd.id == MetaDataId::ProtonDBConfidence || mdd.id == MetaDataId::ProtonDBScore ||
 			mdd.id == MetaDataId::ProtonDBTotal || mdd.id == MetaDataId::ProtonDBTrendingTier || mdd.id == MetaDataId::ProtonDBUrl) &&
+			source.get(mdd.id).empty())
+			continue;
+
+		if ((mdd.id == MetaDataId::PCGamingWikiPage || mdd.id == MetaDataId::PCGamingWikiPageId || mdd.id == MetaDataId::PCGamingWikiUrl ||
+			mdd.id == MetaDataId::PCGamingWikiDevelopers || mdd.id == MetaDataId::PCGamingWikiPublishers) &&
 			source.get(mdd.id).empty())
 			continue;
 

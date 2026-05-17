@@ -92,6 +92,11 @@ enum MetaDataId
 	ProtonDBTotal = 55,
 	ProtonDBTrendingTier = 56,
 	ProtonDBUrl = 57,
+	PCGamingWikiPage = 58,
+	PCGamingWikiPageId = 59,
+	PCGamingWikiUrl = 60,
+	PCGamingWikiDevelopers = 61,
+	PCGamingWikiPublishers = 62,
 
 	// Important : Control value
 	MetaDataIdCount

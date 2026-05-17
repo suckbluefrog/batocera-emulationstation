@@ -115,6 +115,8 @@ static std::map<std::string, std::function<BindableProperty(FileData*)>> propert
 	{ "steamAppId",			[](FileData* file) { return file->getMetadata(MetaDataId::SteamAppId); } },
 	{ "protondbTier",		[](FileData* file) { return file->getMetadata(MetaDataId::ProtonDBTier); } },
 	{ "protondbSummary",	[](FileData* file) { return formatProtonDBSummary(file); } },
+	{ "pcgamingwikiPage",	[](FileData* file) { return file->getMetadata(MetaDataId::PCGamingWikiPage); } },
+	{ "pcgamingwikiUrl",	[](FileData* file) { return file->getMetadata(MetaDataId::PCGamingWikiUrl); } },
 	{ "systemName",			[](FileData* file) { return file->getSourceFileData()->getSystem()->getFullName(); } },
 	{ "fullName",			[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file); } },
 	{ "fullNameNoFavorite",	[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file, false, false); } },

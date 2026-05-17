@@ -140,10 +140,10 @@ protected:
 
 	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblLastPlayed, mLblPlayCount, mLblGameTime, mLblFavorite;
 	TextComponent mLblHltbMain, mLblHltbExtra, mLblHltbCompletionist, mLblHltbProgress;
-	TextComponent mLblProtonDB;
+	TextComponent mLblProtonDB, mLblPCGamingWiki;
 	TextComponent mDeveloper, mPublisher, mGenre, mPlayers, mPlayCount, mName, mGameTime, mTextFavorite;
 	TextComponent mHltbMain, mHltbExtra, mHltbCompletionist, mHltbProgress;
-	TextComponent mProtonDB;
+	TextComponent mProtonDB, mPCGamingWiki;
 
 	RatingComponent mRating;
 	DateTimeComponent mReleaseDate, mLastPlayed;

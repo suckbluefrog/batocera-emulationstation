@@ -88,13 +88,13 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window),
 	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window), mLblGameTime(window), mLblFavorite(window),
 	mLblHltbMain(window), mLblHltbExtra(window), mLblHltbCompletionist(window), mLblHltbProgress(window),
-	mLblProtonDB(window),
+	mLblProtonDB(window), mLblPCGamingWiki(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window),
 	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window),
 	mName(window), mGameTime(window), mTextFavorite(window),
 	mHltbMain(window), mHltbExtra(window), mHltbCompletionist(window), mHltbProgress(window),
-	mProtonDB(window), mIsPerGameExtrasPathBinding(false)
+	mProtonDB(window), mPCGamingWiki(window), mIsPerGameExtrasPathBinding(false)
 {
 	std::vector<MdImage> mdl = 
 	{ 
@@ -143,6 +143,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mLblHltbCompletionist.setVisible(false);
 		mLblHltbProgress.setVisible(false);
 		mLblProtonDB.setVisible(false);
+		mLblPCGamingWiki.setVisible(false);
 		mName.setVisible(false);
 		mPlayCount.setVisible(false);
 		mLastPlayed.setVisible(false);
@@ -151,6 +152,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mHltbCompletionist.setVisible(false);
 		mHltbProgress.setVisible(false);
 		mProtonDB.setVisible(false);
+		mPCGamingWiki.setVisible(false);
 		mPlayers.setVisible(false);
 		mGenre.setVisible(false);
 		mPublisher.setVisible(false);
@@ -173,6 +175,8 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mHltbProgress.setVisible(false);
 	mLblProtonDB.setVisible(false);
 	mProtonDB.setVisible(false);
+	mLblPCGamingWiki.setVisible(false);
+	mPCGamingWiki.setVisible(false);
 	mLblFavorite.setVisible(false);
 	mTextFavorite.setVisible(false);
 
@@ -223,6 +227,9 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblProtonDB.setText(_("ProtonDB") + ": ");
 	addChild(&mLblProtonDB);
 	addChild(&mProtonDB);
+	mLblPCGamingWiki.setText(_("PCGamingWiki") + ": ");
+	addChild(&mLblPCGamingWiki);
+	addChild(&mPCGamingWiki);
 	mLblFavorite.setText(_("Favorite") + ": ");
 	addChild(&mLblFavorite);
 	addChild(&mTextFavorite);
@@ -362,6 +369,7 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 		{ "text",     "md_hltbcompletionist", &mHltbCompletionist, "md_lbl_hltbcompletionist", &mLblHltbCompletionist },
 		{ "text",     "md_hltbprogress", &mHltbProgress, "md_lbl_hltbprogress", &mLblHltbProgress },
 		{ "text",     "md_protondb",    &mProtonDB,     "md_lbl_protondb",    &mLblProtonDB },
+		{ "text",     "md_pcgamingwiki", &mPCGamingWiki, "md_lbl_pcgamingwiki", &mLblPCGamingWiki },
 		{ "text",     "md_favorite",    &mTextFavorite, "md_lbl_favorite",    &mLblFavorite }
 	};
 	return mdl;	
@@ -817,6 +825,7 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mHltbCompletionist.setValue("");
 	mHltbProgress.setValue("");
 	mProtonDB.setValue("");
+	mPCGamingWiki.setValue("");
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1146,6 +1155,7 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mHltbCompletionist.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime)));
 			mHltbProgress.setValue(getHltbProgress(file));
 			mProtonDB.setValue(getProtonDBSummary(file));
+			mPCGamingWiki.setValue(file->getMetadata(MetaDataId::PCGamingWikiPage));
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);
