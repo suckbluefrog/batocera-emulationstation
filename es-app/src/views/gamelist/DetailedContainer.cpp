@@ -47,6 +47,26 @@ static std::string getHltbProgress(FileData* file)
 	return secondsToDisplay(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
 }
 
+static std::string getHltbSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	std::vector<std::string> parts;
+	auto main = secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime));
+	auto extra = secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime));
+	auto completionist = secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime));
+
+	if (!main.empty())
+		parts.push_back(_("Main") + " " + main);
+	if (!extra.empty())
+		parts.push_back(_("Extra") + " " + extra);
+	if (!completionist.empty())
+		parts.push_back(_("100%") + " " + completionist);
+
+	return Utils::String::join(parts, " / ");
+}
+
 static std::string getProtonDBSummary(FileData* file)
 {
 	if (file == nullptr)
@@ -240,7 +260,7 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblGameTime.setText(_("Game time") + ": ");
 	addChild(&mLblGameTime);
 	addChild(&mGameTime);
-	mLblHltbMain.setText(_("HLTB main") + ": ");
+	mLblHltbMain.setText(_("HowLongToBeat") + ": ");
 	addChild(&mLblHltbMain);
 	addChild(&mHltbMain);
 	mLblHltbExtra.setText(_("HLTB extra") + ": ");
@@ -405,6 +425,26 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 		{ "text",     "md_favorite",    &mTextFavorite, "md_lbl_favorite",    &mLblFavorite }
 	};
 	return mdl;	
+}
+
+bool DetailedContainer::isMetadataRowThemed(const std::string& id, const std::string& labelId, const std::string& expectedType)
+{
+	auto theme = mCustomTheme != nullptr ? mCustomTheme : mTheme;
+	if (theme == nullptr)
+		return false;
+
+	return theme->getElement(getName(), id, expectedType) != nullptr || theme->getElement(getName(), labelId, "text") != nullptr;
+}
+
+void DetailedContainer::setDefaultMetadataRowVisible(TextComponent* label, GuiComponent* component, const std::string& id, const std::string& labelId, const std::string& expectedType, bool visible)
+{
+	if (isMetadataRowThemed(id, labelId, expectedType))
+		return;
+
+	if (label != nullptr)
+		label->setVisible(visible);
+	if (component != nullptr)
+		component->setVisible(visible);
 }
 
 
@@ -859,6 +899,8 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mProtonDB.setValue("");
 	mPCGamingWiki.setValue("");
 	mLauncher.setValue("");
+	setDefaultMetadataRowVisible(&mLblHltbMain, &mHltbMain, "md_hltbmain", "md_lbl_hltbmain", "text", false);
+	setDefaultMetadataRowVisible(&mLblProtonDB, &mProtonDB, "md_protondb", "md_lbl_protondb", "text", false);
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1183,13 +1225,19 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mLastPlayed.setValue(file->getMetadata(MetaDataId::LastPlayed));
 			mPlayCount.setValue(file->getMetadata(MetaDataId::PlayCount));
 			mGameTime.setValue(Utils::Time::secondsToString(atol(file->getMetadata(MetaDataId::GameTime).c_str())));
-			mHltbMain.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime)));
+			auto hltbSummary = isMetadataRowThemed("md_hltbmain", "md_lbl_hltbmain", "text") ?
+				secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime)) : getHltbSummary(file);
+			auto protonDBSummary = getProtonDBSummary(file);
+
+			mHltbMain.setValue(hltbSummary);
 			mHltbExtra.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime)));
 			mHltbCompletionist.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime)));
 			mHltbProgress.setValue(getHltbProgress(file));
-			mProtonDB.setValue(getProtonDBSummary(file));
+			mProtonDB.setValue(protonDBSummary);
 			mPCGamingWiki.setValue(file->getMetadata(MetaDataId::PCGamingWikiPage));
 			mLauncher.setValue(getLauncherSummary(file));
+			setDefaultMetadataRowVisible(&mLblHltbMain, &mHltbMain, "md_hltbmain", "md_lbl_hltbmain", "text", !hltbSummary.empty());
+			setDefaultMetadataRowVisible(&mLblProtonDB, &mProtonDB, "md_protondb", "md_lbl_protondb", "text", !protonDBSummary.empty());
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);

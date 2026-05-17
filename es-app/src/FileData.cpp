@@ -65,6 +65,26 @@ static std::string formatHltbProgress(FileData* file)
 	return formatSeconds(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
 }
 
+static std::string formatHltbSummary(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	std::vector<std::string> parts;
+	auto main = formatSeconds(file->getMetadata(MetaDataId::HltbMainTime));
+	auto extra = formatSeconds(file->getMetadata(MetaDataId::HltbExtraTime));
+	auto completionist = formatSeconds(file->getMetadata(MetaDataId::HltbCompletionistTime));
+
+	if (!main.empty())
+		parts.push_back(_("Main") + " " + main);
+	if (!extra.empty())
+		parts.push_back(_("Extra") + " " + extra);
+	if (!completionist.empty())
+		parts.push_back(_("100%") + " " + completionist);
+
+	return Utils::String::join(parts, " / ");
+}
+
 static std::string formatProtonDBSummary(FileData* file)
 {
 	if (file == nullptr)
@@ -135,6 +155,7 @@ static std::map<std::string, std::function<BindableProperty(FileData*)>> propert
 	{ "hltbExtra",			[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbExtraTime)); } },
 	{ "hltbCompletionist",	[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbCompletionistTime)); } },
 	{ "hltbAllStyles",		[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbAllStylesTime)); } },
+	{ "hltbSummary",		[](FileData* file) { return formatHltbSummary(file); } },
 	{ "hltbProgress",		[](FileData* file) { return formatHltbProgress(file); } },
 	{ "steamAppId",			[](FileData* file) { return file->getMetadata(MetaDataId::SteamAppId); } },
 	{ "protondbTier",		[](FileData* file) { return file->getMetadata(MetaDataId::ProtonDBTier); } },
