@@ -11,6 +11,7 @@
 #include <fstream>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
+#include <vector>
 
 using namespace rapidjson;
 
@@ -84,6 +85,35 @@ namespace
 		return Utils::String::trim(cleaned);
 	}
 
+	std::string getPCGamingWikiDescription(const std::string& page, const std::string& url, const std::string& developers, const std::string& publishers)
+	{
+		if (page.empty())
+			return "";
+
+		std::vector<std::string> lines;
+		lines.push_back("PCGamingWiki: " + page);
+		if (!developers.empty())
+			lines.push_back("Developers: " + developers);
+		if (!publishers.empty())
+			lines.push_back("Publishers: " + publishers);
+		if (!url.empty())
+			lines.push_back("URL: " + url);
+
+		return Utils::String::join(lines, "\n");
+	}
+
+	std::string appendPCGamingWikiDescription(const std::string& description, const std::string& pcgwDescription)
+	{
+		if (pcgwDescription.empty() || description.find(pcgwDescription) != std::string::npos)
+			return description;
+
+		auto trimmed = Utils::String::trim(description);
+		if (trimmed.empty())
+			return pcgwDescription;
+
+		return trimmed + "\n\n" + pcgwDescription;
+	}
+
 	std::string cargoQueryForSteamAppId(const std::string& appId)
 	{
 		auto where = "Infobox_game.Steam_AppID HOLDS \"" + appId + "\"";
@@ -147,14 +177,21 @@ void PCGamingWikiRequest::addResult(std::vector<ScraperSearchResult>& results, c
 
 	result.mdl.set(MetaDataId::Name, page);
 	result.mdl.set(MetaDataId::PCGamingWikiPage, page);
-	result.mdl.set(MetaDataId::PCGamingWikiUrl, pageUrl(page));
+	auto url = pageUrl(page);
+	result.mdl.set(MetaDataId::PCGamingWikiUrl, url);
 
 	if (!pageId.empty())
 		result.mdl.set(MetaDataId::PCGamingWikiPageId, pageId);
-	if (!developers.empty())
-		result.mdl.set(MetaDataId::PCGamingWikiDevelopers, cleanCompanyList(developers));
-	if (!publishers.empty())
-		result.mdl.set(MetaDataId::PCGamingWikiPublishers, cleanCompanyList(publishers));
+
+	auto cleanedDevelopers = cleanCompanyList(developers);
+	auto cleanedPublishers = cleanCompanyList(publishers);
+	if (!cleanedDevelopers.empty())
+		result.mdl.set(MetaDataId::PCGamingWikiDevelopers, cleanedDevelopers);
+	if (!cleanedPublishers.empty())
+		result.mdl.set(MetaDataId::PCGamingWikiPublishers, cleanedPublishers);
+
+	auto pcgwDescription = getPCGamingWikiDescription(page, url, cleanedDevelopers, cleanedPublishers);
+	result.mdl.set(MetaDataId::Desc, appendPCGamingWikiDescription(result.mdl.get(MetaDataId::Desc), pcgwDescription));
 
 	results.push_back(result);
 }

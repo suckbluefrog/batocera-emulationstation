@@ -7,6 +7,7 @@
 #include "utils/StringUtil.h"
 
 #include <algorithm>
+#include <vector>
 
 namespace
 {
@@ -119,6 +120,42 @@ namespace
 			return Utils::String::toInteger(value) > 0;
 
 		return value != "0";
+	}
+
+	std::string getPCGamingWikiDescription(const MetaDataList& metadata)
+	{
+		auto page = metadata.get(MetaDataId::PCGamingWikiPage);
+		if (page.empty())
+			return "";
+
+		std::vector<std::string> lines;
+		lines.push_back("PCGamingWiki: " + page);
+
+		auto developers = metadata.get(MetaDataId::PCGamingWikiDevelopers);
+		if (!developers.empty())
+			lines.push_back("Developers: " + developers);
+
+		auto publishers = metadata.get(MetaDataId::PCGamingWikiPublishers);
+		if (!publishers.empty())
+			lines.push_back("Publishers: " + publishers);
+
+		auto url = metadata.get(MetaDataId::PCGamingWikiUrl);
+		if (!url.empty())
+			lines.push_back("URL: " + url);
+
+		return Utils::String::join(lines, "\n");
+	}
+
+	std::string appendPCGamingWikiDescription(const std::string& description, const std::string& pcgwDescription)
+	{
+		if (pcgwDescription.empty() || description.find(pcgwDescription) != std::string::npos)
+			return description;
+
+		auto trimmed = Utils::String::trim(description);
+		if (trimmed.empty())
+			return pcgwDescription;
+
+		return trimmed + "\n\n" + pcgwDescription;
 	}
 }
 
@@ -264,6 +301,18 @@ void MixedScraperRequest::finish()
 		auto it = mChildResults.find(scraperName);
 		if (it != mChildResults.cend())
 			mergeMetadata(scraperName, it->second);
+	}
+
+	auto pcgwIt = mChildResults.find("PCGamingWiki");
+	if (pcgwIt != mChildResults.cend())
+	{
+		auto pcgwDescription = getPCGamingWikiDescription(pcgwIt->second.mdl);
+		auto mergedDescription = appendPCGamingWikiDescription(mMerged.mdl.get(MetaDataId::Desc), pcgwDescription);
+		if (mergedDescription != mMerged.mdl.get(MetaDataId::Desc))
+		{
+			mMerged.mdl.set(MetaDataId::Desc, mergedDescription);
+			mChanged = true;
+		}
 	}
 
 	for (auto scraperName : mMediaOrder)
