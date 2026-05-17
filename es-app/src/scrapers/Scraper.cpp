@@ -4,6 +4,7 @@
 #include "ArcadeDBJSONScraper.h"
 #include "GamesDBJSONScraper.h"
 #include "ScreenScraper.h"
+#include "SteamGridDBScraper.h"
 #include "Log.h"
 #include "Settings.h"
 #include "SystemData.h"
@@ -35,6 +36,7 @@ std::vector<std::pair<std::string, Scraper*>> Scraper::scrapers
 #endif
 
 	{ "IGDB", new IGDBScraper() },
+	{ "SteamGridDB", new SteamGridDBScraper() },
 	{ "ArcadeDB", new ArcadeDBScraper() }
 };
 

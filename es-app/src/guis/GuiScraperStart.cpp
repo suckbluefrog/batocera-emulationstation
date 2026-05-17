@@ -347,6 +347,9 @@ void GuiScraperStart::loadAccountsPage()
 	addGroup(_("IGDB"));
 	addInputTextConfigRow(_("CLIENT ID"), "IGDBClientID", false, true);
 	addInputTextConfigRow(_("CLIENT SECRET"), "IGDBSecret", true, true);
+
+	addGroup(_("STEAMGRIDDB"));
+	addInputTextConfigRow(_("API KEY"), "steamgriddb.api_key", true);
 }
 
 void GuiScraperStart::pressedStart()
