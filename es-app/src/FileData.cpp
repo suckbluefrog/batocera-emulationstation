@@ -37,6 +37,34 @@
 
 using namespace Utils::Platform;
 
+static std::string formatSeconds(const std::string& value)
+{
+	auto seconds = atol(value.c_str());
+	if (seconds <= 0)
+		return "";
+
+	return Utils::Time::secondsToString(seconds);
+}
+
+static std::string formatHltbProgress(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto played = atol(file->getMetadata(MetaDataId::GameTime).c_str());
+	auto target = atol(file->getMetadata(MetaDataId::HltbMainTime).c_str());
+	if (target <= 0)
+		target = atol(file->getMetadata(MetaDataId::HltbExtraTime).c_str());
+	if (target <= 0 || played <= 0)
+		return "";
+
+	long percent = (played * 100 + target / 2) / target;
+	if (percent > 999)
+		percent = 999;
+
+	return formatSeconds(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
+}
+
 static std::map<std::string, std::function<BindableProperty(FileData*)>> properties =
 {
 	{ "name",				[](FileData* file) { return file->getName(); } },
@@ -57,6 +85,12 @@ static std::map<std::string, std::function<BindableProperty(FileData*)>> propert
 	{ "cheevos",			[](FileData* file) { return file->hasCheevos(); } },
 	{ "genre",			    [](FileData* file) { return file->getGenre(); } },
 	{ "hasKeyboardMapping", [](FileData* file) { return file->hasKeyboardMapping(); } },	
+	{ "gameTime",			[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::GameTime)); } },
+	{ "hltbMain",			[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbMainTime)); } },
+	{ "hltbExtra",			[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbExtraTime)); } },
+	{ "hltbCompletionist",	[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbCompletionistTime)); } },
+	{ "hltbAllStyles",		[](FileData* file) { return formatSeconds(file->getMetadata(MetaDataId::HltbAllStylesTime)); } },
+	{ "hltbProgress",		[](FileData* file) { return formatHltbProgress(file); } },
 	{ "systemName",			[](FileData* file) { return file->getSourceFileData()->getSystem()->getFullName(); } },
 	{ "fullName",			[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file); } },
 	{ "fullNameNoFavorite",	[](FileData* file) { return GameNameFormatter(file->getSystem()).getDisplayName(file, false, false); } },

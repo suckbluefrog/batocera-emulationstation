@@ -19,6 +19,34 @@
 #endif
 #include "components/VideoVlcComponent.h"
 
+static std::string secondsToDisplay(const std::string& value)
+{
+	auto seconds = atol(value.c_str());
+	if (seconds <= 0)
+		return "";
+
+	return Utils::Time::secondsToString(seconds);
+}
+
+static std::string getHltbProgress(FileData* file)
+{
+	if (file == nullptr)
+		return "";
+
+	auto played = atol(file->getMetadata(MetaDataId::GameTime).c_str());
+	auto target = atol(file->getMetadata(MetaDataId::HltbMainTime).c_str());
+	if (target <= 0)
+		target = atol(file->getMetadata(MetaDataId::HltbExtraTime).c_str());
+	if (played <= 0 || target <= 0)
+		return "";
+
+	long percent = (played * 100 + target / 2) / target;
+	if (percent > 999)
+		percent = 999;
+
+	return secondsToDisplay(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
+}
+
 DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* list, Window* window, DetailedContainerType viewType) :
 	mParent(parent), mList(list), mWindow(window), mViewType(viewType),
 	mDescription(window),
@@ -38,10 +66,12 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window),
 	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window), mLblGameTime(window), mLblFavorite(window),
+	mLblHltbMain(window), mLblHltbExtra(window), mLblHltbCompletionist(window), mLblHltbProgress(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window),
 	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window),
-	mName(window), mGameTime(window), mTextFavorite(window), mIsPerGameExtrasPathBinding(false)
+	mName(window), mGameTime(window), mTextFavorite(window),
+	mHltbMain(window), mHltbExtra(window), mHltbCompletionist(window), mHltbProgress(window), mIsPerGameExtrasPathBinding(false)
 {
 	std::vector<MdImage> mdl = 
 	{ 
@@ -85,9 +115,17 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 		mLblPlayers.setVisible(false);
 		mLblLastPlayed.setVisible(false);
 		mLblPlayCount.setVisible(false);
+		mLblHltbMain.setVisible(false);
+		mLblHltbExtra.setVisible(false);
+		mLblHltbCompletionist.setVisible(false);
+		mLblHltbProgress.setVisible(false);
 		mName.setVisible(false);
 		mPlayCount.setVisible(false);
 		mLastPlayed.setVisible(false);
+		mHltbMain.setVisible(false);
+		mHltbExtra.setVisible(false);
+		mHltbCompletionist.setVisible(false);
+		mHltbProgress.setVisible(false);
 		mPlayers.setVisible(false);
 		mGenre.setVisible(false);
 		mPublisher.setVisible(false);
@@ -100,6 +138,14 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	// metadata labels + values
 	mLblGameTime.setVisible(false);
 	mGameTime.setVisible(false);
+	mLblHltbMain.setVisible(false);
+	mHltbMain.setVisible(false);
+	mLblHltbExtra.setVisible(false);
+	mHltbExtra.setVisible(false);
+	mLblHltbCompletionist.setVisible(false);
+	mHltbCompletionist.setVisible(false);
+	mLblHltbProgress.setVisible(false);
+	mHltbProgress.setVisible(false);
 	mLblFavorite.setVisible(false);
 	mTextFavorite.setVisible(false);
 
@@ -135,6 +181,18 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblGameTime.setText(_("Game time") + ": ");
 	addChild(&mLblGameTime);
 	addChild(&mGameTime);
+	mLblHltbMain.setText(_("HLTB main") + ": ");
+	addChild(&mLblHltbMain);
+	addChild(&mHltbMain);
+	mLblHltbExtra.setText(_("HLTB extra") + ": ");
+	addChild(&mLblHltbExtra);
+	addChild(&mHltbExtra);
+	mLblHltbCompletionist.setText(_("HLTB completionist") + ": ");
+	addChild(&mLblHltbCompletionist);
+	addChild(&mHltbCompletionist);
+	mLblHltbProgress.setText(_("HLTB progress") + ": ");
+	addChild(&mLblHltbProgress);
+	addChild(&mHltbProgress);
 	mLblFavorite.setText(_("Favorite") + ": ");
 	addChild(&mLblFavorite);
 	addChild(&mTextFavorite);
@@ -269,6 +327,10 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 		{ "datetime", "md_lastplayed",  &mLastPlayed,   "md_lbl_lastplayed",  &mLblLastPlayed },
 		{ "text",     "md_playcount",   &mPlayCount,    "md_lbl_playcount",   &mLblPlayCount },
 		{ "text",     "md_gametime",    &mGameTime,     "md_lbl_gametime",    &mLblGameTime },
+		{ "text",     "md_hltbmain",    &mHltbMain,     "md_lbl_hltbmain",    &mLblHltbMain },
+		{ "text",     "md_hltbextra",   &mHltbExtra,    "md_lbl_hltbextra",   &mLblHltbExtra },
+		{ "text",     "md_hltbcompletionist", &mHltbCompletionist, "md_lbl_hltbcompletionist", &mLblHltbCompletionist },
+		{ "text",     "md_hltbprogress", &mHltbProgress, "md_lbl_hltbprogress", &mLblHltbProgress },
 		{ "text",     "md_favorite",    &mTextFavorite, "md_lbl_favorite",    &mLblFavorite }
 	};
 	return mdl;	
@@ -719,6 +781,10 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mLastPlayed.setValue("");
 	mPlayCount.setValue("");
 	mGameTime.setValue("");
+	mHltbMain.setValue("");
+	mHltbExtra.setValue("");
+	mHltbCompletionist.setValue("");
+	mHltbProgress.setValue("");
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1043,6 +1109,10 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mLastPlayed.setValue(file->getMetadata(MetaDataId::LastPlayed));
 			mPlayCount.setValue(file->getMetadata(MetaDataId::PlayCount));
 			mGameTime.setValue(Utils::Time::secondsToString(atol(file->getMetadata(MetaDataId::GameTime).c_str())));
+			mHltbMain.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime)));
+			mHltbExtra.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime)));
+			mHltbCompletionist.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime)));
+			mHltbProgress.setValue(getHltbProgress(file));
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);

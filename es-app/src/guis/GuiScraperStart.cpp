@@ -81,8 +81,9 @@ void GuiScraperStart::loadScrapPage()
 
 	// Media Filter
 	mFilters = std::make_shared< OptionListComponent<FilterFunc> >(mWindow, _("GAMES TO SCRAPE FOR"), false);
-	mFilters->add(_("ALL"), [](FileData*) -> bool { return true; }, false);
-	mFilters->add(_("GAMES MISSING ANY MEDIA"), [this, scraper](FileData* g) -> bool { mOverwriteMedias = false; return scraper->hasMissingMedia(g); }, true);
+	bool metadataOnlyScraper = scraper->getSupportedMedias().empty();
+	mFilters->add(_("ALL"), [](FileData*) -> bool { return true; }, metadataOnlyScraper);
+	mFilters->add(_("GAMES MISSING ANY MEDIA"), [this, scraper](FileData* g) -> bool { mOverwriteMedias = false; return scraper->hasMissingMedia(g); }, !metadataOnlyScraper);
 	mFilters->add(_("GAMES MISSING ALL MEDIA"), [this, scraper](FileData* g) -> bool { mOverwriteMedias = true; return !scraper->hasAnyMedia(g); }, false);
 	addWithLabel(_("GAMES TO SCRAPE FOR"), mFilters);
 

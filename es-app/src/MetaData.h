@@ -79,6 +79,12 @@ enum MetaDataId
 	Tags = 42,
 	MultiDisk = 43,
 	LaunchVideo = 44,
+	HltbId = 45,
+	HltbMainTime = 46,
+	HltbExtraTime = 47,
+	HltbCompletionistTime = 48,
+	HltbAllStylesTime = 49,
+	HltbUrl = 50,
 
 	// Important : Control value
 	MetaDataIdCount

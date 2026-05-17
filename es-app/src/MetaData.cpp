@@ -22,7 +22,9 @@ static std::map<std::string, int> KnowScrapersIds =
 	{ "ScreenScraper", 0 },
 	{ "TheGamesDB", 1 },
 	{ "HfsDB", 2 },
-	{ "ArcadeDB", 3 }
+	{ "ArcadeDB", 3 },
+	{ "SteamGridDB", 4 },
+	{ "HowLongToBeat", 5 }
 };
 
 void MetaDataList::initMetadata()
@@ -90,6 +92,12 @@ void MetaDataList::initMetadata()
 		{ Md5,              "md5",		   MD_STRING,              "",                 true,       _("Md5"),                  _("Md5 checksum"),			false },
 
 		{ GameTime,         "gametime",    MD_INT,                 "0",                true,       _("Game time"),            _("how long the game has been played in total (seconds)"), false },
+		{ HltbId,           "hltbid",      MD_INT,                 "",                 false,      _("HowLongToBeat ID"),     _("HowLongToBeat game ID"), false },
+		{ HltbMainTime,     "hltbmain",    MD_INT,                 "0",                false,      _("HLTB main story"),      _("HowLongToBeat main story time (seconds)"), false },
+		{ HltbExtraTime,    "hltbextra",   MD_INT,                 "0",                false,      _("HLTB main + extra"),    _("HowLongToBeat main plus extra time (seconds)"), false },
+		{ HltbCompletionistTime, "hltbcompletionist", MD_INT,      "0",                false,      _("HLTB completionist"),   _("HowLongToBeat completionist time (seconds)"), false },
+		{ HltbAllStylesTime, "hltballstyles", MD_INT,              "0",                false,      _("HLTB all styles"),      _("HowLongToBeat all styles time (seconds)"), false },
+		{ HltbUrl,          "hltburl",     MD_STRING,              "",                 false,      _("HowLongToBeat URL"),    _("HowLongToBeat game page"), false },
 
 		{ Language,         "lang",        MD_STRING,              "",                 false,      _("Languages"),            _("this game's languages"),				false },
 		{ Region,           "region",      MD_STRING,              "",                 false,      _("Region"),               _("this game's region"),					false },
@@ -532,6 +540,16 @@ void MetaDataList::importScrappedMetadata(const MetaDataList& source)
 			continue;
 
 		if (mdd.id == MetaDataId::Favorite || mdd.id == MetaDataId::Hidden || mdd.id == MetaDataId::Emulator || mdd.id == MetaDataId::Core)
+			continue;
+
+		if (mdd.id == MetaDataId::HltbId || mdd.id == MetaDataId::HltbMainTime || mdd.id == MetaDataId::HltbExtraTime ||
+			mdd.id == MetaDataId::HltbCompletionistTime || mdd.id == MetaDataId::HltbAllStylesTime)
+		{
+			if (Utils::String::toInteger(source.get(mdd.id)) <= 0)
+				continue;
+		}
+
+		if (mdd.id == MetaDataId::HltbUrl && source.get(mdd.id).empty())
 			continue;
 
 		if (mdd.id == MetaDataId::Image && (source.get(mdd.id).empty() || (type & MetaDataImportType::Types::IMAGE) != MetaDataImportType::Types::IMAGE))

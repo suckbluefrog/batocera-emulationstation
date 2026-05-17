@@ -139,7 +139,9 @@ protected:
 	ImageComponent* mNotSpinnerGame;
 
 	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblLastPlayed, mLblPlayCount, mLblGameTime, mLblFavorite;
+	TextComponent mLblHltbMain, mLblHltbExtra, mLblHltbCompletionist, mLblHltbProgress;
 	TextComponent mDeveloper, mPublisher, mGenre, mPlayers, mPlayCount, mName, mGameTime, mTextFavorite;
+	TextComponent mHltbMain, mHltbExtra, mHltbCompletionist, mHltbProgress;
 
 	RatingComponent mRating;
 	DateTimeComponent mReleaseDate, mLastPlayed;
