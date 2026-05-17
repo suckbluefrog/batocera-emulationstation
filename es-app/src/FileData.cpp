@@ -474,6 +474,177 @@ static std::string formatCommandLineArgument(const std::string& name)
 	return Utils::String::replace(name, "\"", "\\\"");
 };
 
+static bool isDisabledSetting(const std::string& value)
+{
+	auto normalized = Utils::String::toLower(Utils::String::trim(value));
+	return normalized == "0" || normalized == "none" || normalized == "off" || normalized == "disabled";
+}
+
+static std::string firstExistingVideo(const std::string& base)
+{
+	if (Utils::FileSystem::isRegularFile(base))
+		return base;
+
+	for (auto extension : { ".mp4", ".mkv", ".webm", ".mov", ".avi" })
+	{
+		auto path = base + extension;
+		if (Utils::FileSystem::isRegularFile(path))
+			return path;
+	}
+
+	return "";
+}
+
+static std::string getConfiguredLaunchVideo(const std::string& configName, bool& disabled)
+{
+	disabled = false;
+
+	auto configuredVideo = Utils::String::trim(SystemConf::getInstance()->get(configName + ".launchvideo"));
+	if (configuredVideo.empty() || configuredVideo == "auto")
+		return "";
+
+	if (isDisabledSetting(configuredVideo))
+	{
+		disabled = true;
+		return "";
+	}
+
+	if (Utils::FileSystem::isRegularFile(configuredVideo))
+		return configuredVideo;
+
+	LOG(LogWarning) << "Launch video configured but not found: " << configuredVideo;
+	return "";
+}
+
+static std::string findGameLaunchVideo(const std::string& root, const std::string& systemName, const std::string& romStem)
+{
+	auto video = firstExistingVideo(Utils::FileSystem::combine(Utils::FileSystem::combine(root, systemName), romStem));
+	if (!video.empty())
+		return video;
+
+	return firstExistingVideo(Utils::FileSystem::combine(root, romStem));
+}
+
+static std::string findSystemLaunchVideo(const std::string& root, const std::string& systemName)
+{
+	auto video = firstExistingVideo(Utils::FileSystem::combine(Utils::FileSystem::combine(root, systemName), "default"));
+	if (!video.empty())
+		return video;
+
+	return firstExistingVideo(Utils::FileSystem::combine(root, systemName));
+}
+
+static std::string resolveLaunchVideo(FileData* game)
+{
+	if (game == nullptr || game->getSystem() == nullptr)
+		return "";
+
+	auto metadataVideo = game->getMetadata().get(MetaDataId::LaunchVideo, true);
+	if (!metadataVideo.empty() && Utils::FileSystem::isRegularFile(metadataVideo))
+		return metadataVideo;
+
+	bool disabled = false;
+	auto video = getConfiguredLaunchVideo(game->getConfigurationName(), disabled);
+	if (disabled)
+		return "";
+
+	if (!video.empty())
+		return video;
+
+	auto systemName = game->getSystem()->getName();
+	auto romStem = Utils::FileSystem::getStem(game->getPath());
+
+	for (auto root : { "/userdata/roms/loadingscreens", "/userdata/loadingscreens" })
+	{
+		video = findGameLaunchVideo(root, systemName, romStem);
+		if (!video.empty())
+			return video;
+	}
+
+	video = getConfiguredLaunchVideo(systemName, disabled);
+	if (disabled)
+		return "";
+
+	if (!video.empty())
+		return video;
+
+	for (auto root : { "/userdata/roms/loadingscreens", "/userdata/loadingscreens" })
+	{
+		video = findSystemLaunchVideo(root, systemName);
+		if (!video.empty())
+			return video;
+	}
+
+	video = getConfiguredLaunchVideo("global", disabled);
+	if (disabled)
+		return "";
+
+	if (!video.empty())
+		return video;
+
+	for (auto root : { "/userdata/roms/loadingscreens", "/userdata/loadingscreens" })
+	{
+		video = firstExistingVideo(Utils::FileSystem::combine(root, "default"));
+		if (!video.empty())
+			return video;
+	}
+
+	return video;
+}
+
+static int getLaunchVideoMaxDuration(FileData* game)
+{
+	auto value = game->getCurrentGameSetting("launchvideo.maxduration");
+	if (value.empty() || value == "auto" || value == "full" || value == "0")
+		return 0;
+
+	return Math::clamp(0, 3600, Utils::String::toInteger(value));
+}
+
+static std::string getLaunchVideoCommand(const std::string& video, int maxDuration)
+{
+	auto escapedVideo = Utils::FileSystem::getEscapedPath(video);
+	auto duration = maxDuration > 0 ? std::to_string(maxDuration) : "";
+
+	if (Utils::FileSystem::exists("/usr/bin/mpv"))
+		return std::string("/usr/bin/mpv --fs --no-terminal --really-quiet --no-osc --no-input-default-bindings --keep-open=no ") +
+			(duration.empty() ? "" : "--length=" + duration + " ") + "-- " + escapedVideo;
+
+	if (Utils::FileSystem::exists("/usr/bin/cvlc"))
+		return std::string("/usr/bin/cvlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
+			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit");
+
+	if (Utils::FileSystem::exists("/usr/bin/vlc"))
+		return std::string("/usr/bin/vlc --fullscreen --no-video-title-show --play-and-exit --no-loop --no-repeat ") +
+			(duration.empty() ? "" : "--run-time " + duration + " ") + escapedVideo + (duration.empty() ? "" : " vlc://quit");
+
+	return "";
+}
+
+static void playLaunchVideo(FileData* game)
+{
+	auto video = resolveLaunchVideo(game);
+	if (video.empty())
+		return;
+
+	auto command = getLaunchVideoCommand(video, getLaunchVideoMaxDuration(game));
+	if (command.empty())
+	{
+		LOG(LogWarning) << "Launch video found but no supported player is available: " << video;
+		return;
+	}
+
+	LOG(LogInfo) << "Playing launch video: " << video;
+
+	ProcessStartInfo process(command);
+	process.showWindow = false;
+#ifndef WIN32
+	process.stderrFilename = "es_launch_video_stderr.log";
+	process.stdoutFilename = "es_launch_video_stdout.log";
+#endif
+	process.run();
+}
+
 std::string FileData::getlaunchCommand(LaunchGameOptions& options, bool includeControllers)
 {
 	FileData* gameToUpdate = getSourceFileData();
@@ -708,6 +879,8 @@ bool FileData::launchGame(Window* window, LaunchGameOptions options)
 
 	bool hideWindow = Settings::getInstance()->getBool("HideWindow");
 	window->deinit(hideWindow);
+
+	playLaunchVideo(gameToUpdate);
 	
 	const std::string rom = Utils::FileSystem::getEscapedPath(getPath());
 	const std::string basename = Utils::FileSystem::getStem(getPath());

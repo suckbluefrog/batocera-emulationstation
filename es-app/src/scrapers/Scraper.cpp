@@ -788,6 +788,7 @@ std::string Scraper::getSaveAsPath(FileData* game, const MetaDataId metadataId, 
 	case MetaDataId::Thumbnail: suffix = "thumb"; break;
 	case MetaDataId::Marquee: suffix = "marquee"; break;
 	case MetaDataId::Video: suffix = "video"; folder = "videos"; break;
+	case MetaDataId::LaunchVideo: suffix = "launchvideo"; folder = "videos"; break;
 	case MetaDataId::FanArt: suffix = "fanart"; break;
 	case MetaDataId::BoxBack: suffix = "boxback"; break;
 	case MetaDataId::BoxArt: suffix = "box"; break;

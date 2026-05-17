@@ -4804,6 +4804,27 @@ void GuiMenu::popSpecificConfigurationGui(Window* mWindow, std::string title, st
 		systemConfiguration->addSaveFunc([configName, videoResolutionMode_choice] { SystemConf::getInstance()->set(configName + ".videomode", videoResolutionMode_choice->getSelected()); });
 	}
 
+	systemConfiguration->addFileBrowser(_("LAUNCH VIDEO"), configName + ".launchvideo", GuiFileBrowser::FileTypes::VIDEO);
+
+	{
+		auto launchVideoMaxDuration = std::make_shared<OptionListComponent<std::string>>(mWindow, _("LAUNCH VIDEO MAX TIME"));
+		auto currentDuration = SystemConf::getInstance()->get(configName + ".launchvideo.maxduration");
+		launchVideoMaxDuration->add(_("AUTO"), "auto", currentDuration.empty() || currentDuration == "auto");
+		launchVideoMaxDuration->add(_("FULL VIDEO"), "0", currentDuration == "0" || currentDuration == "full");
+		launchVideoMaxDuration->add("3s", "3", currentDuration == "3");
+		launchVideoMaxDuration->add("5s", "5", currentDuration == "5");
+		launchVideoMaxDuration->add("8s", "8", currentDuration == "8");
+		launchVideoMaxDuration->add("10s", "10", currentDuration == "10");
+		launchVideoMaxDuration->add("15s", "15", currentDuration == "15");
+		launchVideoMaxDuration->add("30s", "30", currentDuration == "30");
+
+		if (!launchVideoMaxDuration->hasSelection())
+			launchVideoMaxDuration->selectFirstItem();
+
+		systemConfiguration->addWithDescription(_("LAUNCH VIDEO MAX TIME"), _("Maximum time to play the launch video before starting the game."), launchVideoMaxDuration);
+		systemConfiguration->addSaveFunc([configName, launchVideoMaxDuration] { SystemConf::getInstance()->set(configName + ".launchvideo.maxduration", launchVideoMaxDuration->getSelected()); });
+	}
+
 	// smoothing
 	if (systemData->isFeatureSupported(currentEmulator, currentCore, EmulatorFeatures::smooth))
 	{

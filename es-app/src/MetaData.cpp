@@ -49,6 +49,7 @@ void MetaDataList::initMetadata()
 
 		{ Image,            "image",       MD_PATH,                "",                 false,      _("Image"),                _("enter path to image"),		 true },
 		{ Video,            "video",       MD_PATH,                "",                 false,      _("Video"),                _("enter path to video"),		 false },
+		{ LaunchVideo,      "launchvideo", MD_PATH,                "",                 false,      _("Launch video"),         _("enter path to launch video"), false },
 		{ Marquee,          "marquee",     MD_PATH,                "",                 false,      _("Logo"),                 _("enter path to logo"),	     true },
 		{ Thumbnail,        "thumbnail",   MD_PATH,                "",                 false,      _("Box"),				  _("enter path to box"),		 false },
 

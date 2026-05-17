@@ -286,7 +286,7 @@ GuiMetaDataEd::GuiMetaDataEd(Window* window, MetaDataList* md, const std::vector
 
 			GuiFileBrowser::FileTypes type = GuiFileBrowser::FileTypes::IMAGES;
 
-			if (iter->key == "video")
+			if (iter->key == "video" || iter->key == "launchvideo")
 				type = GuiFileBrowser::FileTypes::VIDEO;
 			else if (iter->key == "manual" || iter->key == "magazine" || iter->key == "map")
 				type = (GuiFileBrowser::FileTypes) (GuiFileBrowser::FileTypes::IMAGES | GuiFileBrowser::FileTypes::MANUALS);
