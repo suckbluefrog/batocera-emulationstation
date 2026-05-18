@@ -498,12 +498,19 @@ bool ApiSystem::disableWifi()
 std::string ApiSystem::getIpAddress()
 {
 	LOG(LogDebug) << "ApiSystem::getIpAddress";
-	
+
 	std::string result = Utils::Platform::queryIPAddress(); // platform.h
 	if (result.empty())
 		return "NOT CONNECTED";
 
 	return result;
+}
+
+bool ApiSystem::isWifiAPModeSupported()
+{
+	LOG(LogDebug) << "ApiSystem::isWifiAPModeSupported";
+
+	return executeScript("batocera-wifi has_ap_mode");
 }
 
 bool ApiSystem::enableBluetooth()
@@ -1763,6 +1770,21 @@ void ApiSystem::setLEDEnabled(bool enabled)
 std::vector<std::string> ApiSystem::getWifiNetworks(bool scan)
 {
 	return executeEnumerationScript(scan ? "batocera-wifi scanlist" : "batocera-wifi list");
+}
+
+void ApiSystem::scanWifiNetworks()
+{
+	executeScript("batocera-wifi scanlist &");
+}
+
+std::string ApiSystem::getWifiRoute()
+{
+	std::vector<std::string> result = executeEnumerationScript("batocera-wifi get_route");
+
+	if (result.empty() || result[0].empty())
+		return "NOT CONNECTED";
+
+	return result[0];
 }
 
 std::vector<std::string> ApiSystem::executeEnumerationScript(const std::string command)

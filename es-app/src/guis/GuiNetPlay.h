@@ -83,7 +83,8 @@ public:
 
 private:
 	void startRequest();
-	
+	void findHotspot();
+
 	bool populateFromJson(const std::string json);
 	bool populateFromLan();
 
@@ -97,6 +98,8 @@ private:
 
 	int								mLanLobbySocket;
 	int								mLanLobbySocketTimeout;
+	bool							mFindingHotspot;
+	int								mHotspotSearchElapsed;
 
 	NinePatchComponent				mBackground;
 	ComponentGrid					mGrid;
@@ -112,6 +115,7 @@ private:
 	BusyComponent					mBusyAnim;
 
 	std::unique_ptr<HttpReq>		mLobbyRequest;
+	int								mLobbyGracePeriodElapsed;
 
 	std::vector<LobbyAppEntry>		mLanEntries;
 	std::vector<LobbyAppEntry>		mLobbyEntries;
