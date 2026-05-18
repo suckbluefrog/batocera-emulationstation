@@ -58,8 +58,7 @@ public:
 protected:
 	void	initMDLabels();
 	void	initMDValues();
-	bool	isMetadataRowThemed(const std::string& id, const std::string& labelId, const std::string& expectedType);
-	void	setDefaultMetadataRowVisible(TextComponent* label, GuiComponent* component, const std::string& id, const std::string& labelId, const std::string& expectedType, bool visible);
+	void	setOptionalMetadataRowVisible(TextComponent* label, GuiComponent* component, bool visible);
 
 	std::vector<GuiComponent*>  getComponents();
 	std::vector<MdComponent>  getMetaComponents();

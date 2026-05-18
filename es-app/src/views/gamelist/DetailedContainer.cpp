@@ -427,20 +427,8 @@ std::vector<MdComponent> DetailedContainer::getMetaComponents()
 	return mdl;	
 }
 
-bool DetailedContainer::isMetadataRowThemed(const std::string& id, const std::string& labelId, const std::string& expectedType)
+void DetailedContainer::setOptionalMetadataRowVisible(TextComponent* label, GuiComponent* component, bool visible)
 {
-	auto theme = mCustomTheme != nullptr ? mCustomTheme : mTheme;
-	if (theme == nullptr)
-		return false;
-
-	return theme->getElement(getName(), id, expectedType) != nullptr || theme->getElement(getName(), labelId, "text") != nullptr;
-}
-
-void DetailedContainer::setDefaultMetadataRowVisible(TextComponent* label, GuiComponent* component, const std::string& id, const std::string& labelId, const std::string& expectedType, bool visible)
-{
-	if (isMetadataRowThemed(id, labelId, expectedType))
-		return;
-
 	if (label != nullptr)
 		label->setVisible(visible);
 	if (component != nullptr)
@@ -899,8 +887,8 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mProtonDB.setValue("");
 	mPCGamingWiki.setValue("");
 	mLauncher.setValue("");
-	setDefaultMetadataRowVisible(&mLblHltbMain, &mHltbMain, "md_hltbmain", "md_lbl_hltbmain", "text", false);
-	setDefaultMetadataRowVisible(&mLblProtonDB, &mProtonDB, "md_protondb", "md_lbl_protondb", "text", false);
+	setOptionalMetadataRowVisible(&mLblHltbMain, &mHltbMain, false);
+	setOptionalMetadataRowVisible(&mLblProtonDB, &mProtonDB, false);
 }
 
 void DetailedContainer::resetThemedExtras()
@@ -1225,8 +1213,7 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mLastPlayed.setValue(file->getMetadata(MetaDataId::LastPlayed));
 			mPlayCount.setValue(file->getMetadata(MetaDataId::PlayCount));
 			mGameTime.setValue(Utils::Time::secondsToString(atol(file->getMetadata(MetaDataId::GameTime).c_str())));
-			auto hltbSummary = isMetadataRowThemed("md_hltbmain", "md_lbl_hltbmain", "text") ?
-				secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime)) : getHltbSummary(file);
+			auto hltbSummary = getHltbSummary(file);
 			auto protonDBSummary = getProtonDBSummary(file);
 
 			mHltbMain.setValue(hltbSummary);
@@ -1236,8 +1223,8 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mProtonDB.setValue(protonDBSummary);
 			mPCGamingWiki.setValue(file->getMetadata(MetaDataId::PCGamingWikiPage));
 			mLauncher.setValue(getLauncherSummary(file));
-			setDefaultMetadataRowVisible(&mLblHltbMain, &mHltbMain, "md_hltbmain", "md_lbl_hltbmain", "text", !hltbSummary.empty());
-			setDefaultMetadataRowVisible(&mLblProtonDB, &mProtonDB, "md_protondb", "md_lbl_protondb", "text", !protonDBSummary.empty());
+			setOptionalMetadataRowVisible(&mLblHltbMain, &mHltbMain, !hltbSummary.empty());
+			setOptionalMetadataRowVisible(&mLblProtonDB, &mProtonDB, !protonDBSummary.empty());
 		}
 		else if (file->getType() == FOLDER)
 			updateDetailsForFolder((FolderData*)file);
