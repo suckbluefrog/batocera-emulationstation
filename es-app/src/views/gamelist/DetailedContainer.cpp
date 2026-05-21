@@ -47,26 +47,6 @@ static std::string getHltbProgress(FileData* file)
 	return secondsToDisplay(file->getMetadata(MetaDataId::GameTime)) + " / " + Utils::Time::secondsToString(target) + " (" + std::to_string(percent) + "%)";
 }
 
-static std::string getHltbSummary(FileData* file)
-{
-	if (file == nullptr)
-		return "";
-
-	std::vector<std::string> parts;
-	auto main = secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime));
-	auto extra = secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime));
-	auto completionist = secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime));
-
-	if (!main.empty())
-		parts.push_back(_("Main") + " " + main);
-	if (!extra.empty())
-		parts.push_back(_("Extra") + " " + extra);
-	if (!completionist.empty())
-		parts.push_back(_("100%") + " " + completionist);
-
-	return Utils::String::join(parts, " / ");
-}
-
 static std::string getProtonDBSummary(FileData* file)
 {
 	if (file == nullptr)
@@ -260,13 +240,13 @@ DetailedContainer::DetailedContainer(ISimpleGameListView* parent, GuiComponent* 
 	mLblGameTime.setText(_("Game time") + ": ");
 	addChild(&mLblGameTime);
 	addChild(&mGameTime);
-	mLblHltbMain.setText(_("HowLongToBeat") + ": ");
+	mLblHltbMain.setText(_("HLTB main") + ": ");
 	addChild(&mLblHltbMain);
 	addChild(&mHltbMain);
 	mLblHltbExtra.setText(_("HLTB extra") + ": ");
 	addChild(&mLblHltbExtra);
 	addChild(&mHltbExtra);
-	mLblHltbCompletionist.setText(_("HLTB completionist") + ": ");
+	mLblHltbCompletionist.setText(_("HLTB 100%") + ": ");
 	addChild(&mLblHltbCompletionist);
 	addChild(&mHltbCompletionist);
 	mLblHltbProgress.setText(_("HLTB progress") + ": ");
@@ -888,6 +868,7 @@ void DetailedContainer::updateDetailsForFolder(FolderData* folder)
 	mPCGamingWiki.setValue("");
 	mLauncher.setValue("");
 	setOptionalMetadataRowVisible(&mLblHltbMain, &mHltbMain, false);
+	setOptionalMetadataRowVisible(&mLblHltbCompletionist, &mHltbCompletionist, false);
 	setOptionalMetadataRowVisible(&mLblProtonDB, &mProtonDB, false);
 }
 
@@ -1213,17 +1194,21 @@ void DetailedContainer::updateControls(FileData* file, bool isClearing, int move
 			mLastPlayed.setValue(file->getMetadata(MetaDataId::LastPlayed));
 			mPlayCount.setValue(file->getMetadata(MetaDataId::PlayCount));
 			mGameTime.setValue(Utils::Time::secondsToString(atol(file->getMetadata(MetaDataId::GameTime).c_str())));
-			auto hltbSummary = getHltbSummary(file);
+			auto hltbMain = secondsToDisplay(file->getMetadata(MetaDataId::HltbMainTime));
+			auto hltbExtra = secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime));
+			auto hltbCompletionist = secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime));
+			auto hltbProgress = getHltbProgress(file);
 			auto protonDBSummary = getProtonDBSummary(file);
 
-			mHltbMain.setValue(hltbSummary);
-			mHltbExtra.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbExtraTime)));
-			mHltbCompletionist.setValue(secondsToDisplay(file->getMetadata(MetaDataId::HltbCompletionistTime)));
-			mHltbProgress.setValue(getHltbProgress(file));
+			mHltbMain.setValue(hltbMain);
+			mHltbExtra.setValue(hltbExtra);
+			mHltbCompletionist.setValue(hltbCompletionist);
+			mHltbProgress.setValue(hltbProgress);
 			mProtonDB.setValue(protonDBSummary);
 			mPCGamingWiki.setValue(file->getMetadata(MetaDataId::PCGamingWikiPage));
 			mLauncher.setValue(getLauncherSummary(file));
-			setOptionalMetadataRowVisible(&mLblHltbMain, &mHltbMain, !hltbSummary.empty());
+			setOptionalMetadataRowVisible(&mLblHltbMain, &mHltbMain, !hltbMain.empty());
+			setOptionalMetadataRowVisible(&mLblHltbCompletionist, &mHltbCompletionist, !hltbCompletionist.empty());
 			setOptionalMetadataRowVisible(&mLblProtonDB, &mProtonDB, !protonDBSummary.empty());
 		}
 		else if (file->getType() == FOLDER)
