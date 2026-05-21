@@ -1392,7 +1392,9 @@ static bool isAynSplitStatusLedDirectory(const std::string& directory)
 
 static bool isUnifiedAccentLedDirectory(const std::string& directory)
 {
-	if (directory.find("multicolor") != std::string::npos || directory.find(":rgb:joystick_rings") != std::string::npos)
+	if (directory.find("multicolor") != std::string::npos ||
+		directory.find(":rgb:joystick_rings") != std::string::npos ||
+		directory.find("rgb:l1") != std::string::npos)
 		return true;
 
 	return isAynSplitAccentLedDirectory(directory);
@@ -1466,17 +1468,32 @@ bool ApiSystem::getLED(int& red, int& green, int& blue)
         std::string colourValue = Utils::FileSystem::readAllText(LED_COLOUR_NAME);
         std::stringstream ss(colourValue);
         std::string token;
-        // Extract red value
-        std::getline(ss, token, ' ');
-        red = std::stoi(token);
 
-        // Extract green value
-        std::getline(ss, token, ' ');
-        green = std::stoi(token);
+        if (LED_COLOUR_NAME.find("rgb:l") != std::string::npos) {
+            // Extract blue value
+            std::getline(ss, token, ' ');
+            blue = std::stoi(token);
 
-        // Extract blue value
-        std::getline(ss, token);
-        blue = std::stoi(token);
+            // Extract green value
+            std::getline(ss, token, ' ');
+            green = std::stoi(token);
+
+            // Extract red value
+            std::getline(ss, token);
+            red = std::stoi(token);
+        } else {
+            // Extract red value
+            std::getline(ss, token, ' ');
+            red = std::stoi(token);
+
+            // Extract green value
+            std::getline(ss, token, ' ');
+            green = std::stoi(token);
+
+            // Extract blue value
+            std::getline(ss, token);
+            blue = std::stoi(token);
+        }
 
         executeScript("batocera-led-handheld block_color_changes"); // temporarily prevent changes from external daemon
         LOG(LogInfo) << "ApiSystem::getLED > LED colours are:" << red << " " << green << " " << blue;
@@ -1536,12 +1553,22 @@ void ApiSystem::setLEDColours(int red, int green, int blue)
 	if (mSystemLedType == LED_TYPE_UNIFIED)
 	{
 		if (LED_COLOUR_NAME.empty() || LED_COLOUR_NAME == "notfound") return;
+
 		std::string content = std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
 		if (!LED_COLOUR_NAMES.empty())
 		{
 			// AYN split LEDs: apply to every accent zone.
 			for (const auto& path : LED_COLOUR_NAMES)
 				Utils::FileSystem::writeAllText(path, content);
+		}
+		else if (LED_COLOUR_NAME.find("rgb:l") != std::string::npos)
+		{
+			std::string mangmiContent = std::to_string(blue) + " " + std::to_string(green) + " " + std::to_string(red);
+			for (int i = 1; i <= 7; i++)
+			{
+				Utils::FileSystem::writeAllText("/sys/class/leds/rgb:l" + std::to_string(i) + "/multi_intensity", mangmiContent);
+				Utils::FileSystem::writeAllText("/sys/class/leds/rgb:r" + std::to_string(i) + "/multi_intensity", mangmiContent);
+			}
 		}
 		else
 		{
@@ -1692,9 +1719,18 @@ void ApiSystem::setLEDBrightness(int value)
 		return;
 	}
 
+    if (LED_BRIGHTNESS_VALUE.find("rgb:l") != std::string::npos)
+    {
+        int max = Utils::String::toInteger(Utils::FileSystem::readAllText(LED_MAX_BRIGHTNESS_VALUE));
+        int brightnessValue = static_cast<int>(factor * max + 0.5f);
+        for (int i = 1; i <= 7; i++) {
+            Utils::FileSystem::writeAllText("/sys/class/leds/rgb:l" + std::to_string(i) + "/brightness", std::to_string(brightnessValue) + "\n");
+            Utils::FileSystem::writeAllText("/sys/class/leds/rgb:r" + std::to_string(i) + "/brightness", std::to_string(brightnessValue) + "\n");
+        }
+    }
     // Check if we are on an addressable device (Retroid/Ayn style)
     // These paths typically look like /sys/class/leds/l:r1
-    if (LED_BRIGHTNESS_VALUE.find("/l:") != std::string::npos || 
+    else if (LED_BRIGHTNESS_VALUE.find("/l:") != std::string::npos ||
         LED_BRIGHTNESS_VALUE.find("/r:") != std::string::npos) 
     {
         // Batch update all addressable LED channels
